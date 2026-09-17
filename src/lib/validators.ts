@@ -76,11 +76,19 @@ export const productStatusSchema = z.object({
   activo: z.boolean(),
 });
 
+export const metodoPagamentoSchema = z.enum(['DINHEIRO', 'MPESA', 'EMOLA', 'CARTAO', 'OUTRO']);
+
 export const saleCreateSchema = z.object({
   itens: z.array(z.object({
     produtoId: z.coerce.number().int().positive('O produto é inválido.'),
     quantidade: z.coerce.number().int('A quantidade deve ser um número inteiro.').positive('A quantidade deve ser maior que zero.'),
+    notas: z.string().trim().nullish().transform((v) => (v && v.trim().length > 0 ? v.trim() : null)),
   })).min(1, 'O carrinho está vazio.'),
+  metodoPagamento: metodoPagamentoSchema.default('DINHEIRO'),
+  valorRecebido: z.coerce.number().refine((v) => Number.isFinite(v) && v >= 0, 'Valor recebido inválido.').optional(),
+  troco: z.coerce.number().refine((v) => Number.isFinite(v) && v >= 0, 'Troco inválido.').optional(),
+  referenciaPagamento: z.string().trim().nullish().transform((v) => (v && v.trim().length > 0 ? v.trim() : null)),
+  observacoes: z.string().trim().nullish().transform((v) => (v && v.trim().length > 0 ? v.trim() : null)),
 });
 
 export type SaleCreateInput = z.infer<typeof saleCreateSchema>;

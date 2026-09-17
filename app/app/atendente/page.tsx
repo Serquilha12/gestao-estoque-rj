@@ -13,6 +13,8 @@ import {
   ArrowRightIcon,
 } from '@/src/components/ui/icons';
 
+import { AttendantQuickActions } from '@/src/components/operations/attendant-quick-actions';
+
 export default async function AtendentePage({
   searchParams,
 }: {
@@ -70,6 +72,7 @@ export default async function AtendentePage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <AttendantQuickActions />
           <Link
             href="/app/vendas"
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-emerald-800 transition active:scale-98"

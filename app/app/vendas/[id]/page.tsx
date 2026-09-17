@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Card } from '@/src/components/ui/card';
 import { Badge } from '@/src/components/ui/badge';
 import { ArrowLeftIcon, CheckCircleIcon, PlusIcon } from '@/src/components/ui/icons';
+import { PrintReceiptButton } from '@/src/components/sales/print-button';
 
 export default async function VendaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireRole(['ADMINISTRADOR', 'ATENDENTE'], '/login');
@@ -18,7 +19,7 @@ export default async function VendaDetalhePage({ params }: { params: Promise<{ i
   return (
     <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto">
       {/* Top Bar with Back Link */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <Link
           href="/app/vendas/historico"
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition"
@@ -28,6 +29,7 @@ export default async function VendaDetalhePage({ params }: { params: Promise<{ i
         </Link>
 
         <div className="flex items-center gap-2.5">
+          <PrintReceiptButton />
           <Link
             href="/app/vendas"
             className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-800 transition"

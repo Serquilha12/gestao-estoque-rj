@@ -132,35 +132,57 @@ export default async function AdminRelatoriosPage({
       </Card>
 
       {/* Summary KPI Strip */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
         <Card className="p-5 border-l-4 border-l-emerald-600">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
             Facturação ({periodLabels[periodo]})
           </p>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
+          <p className="mt-2 text-2xl font-black text-slate-900">
             {Number(data.totalFacturadoPeriodo).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
           </p>
-          <p className="mt-1 text-xs text-slate-500">Baseado em preços registados nas transações</p>
+          <p className="mt-1 text-xs text-slate-500">Total bruto arrecadado</p>
+        </Card>
+
+        <Card className="p-5 border-l-4 border-l-amber-600">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            CMV (Custo Mercadoria)
+          </p>
+          <p className="mt-2 text-2xl font-black text-amber-700">
+            {Number(data.cmvPeriodo ?? 0).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+          </p>
+          <p className="mt-1 text-xs text-slate-500">Custo base dos produtos vendidos</p>
+        </Card>
+
+        <Card className="p-5 border-l-4 border-l-emerald-700">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Lucro Bruto (Margem)
+          </p>
+          <p className="mt-2 text-2xl font-black text-emerald-800">
+            {Number(data.lucroBrutoPeriodo ?? 0).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+          </p>
+          <p className="mt-1 text-xs font-bold text-emerald-700">
+            Margem Líquida: {Number(data.margemLucroPeriodo ?? 0).toFixed(1)}%
+          </p>
         </Card>
 
         <Card className="p-5 border-l-4 border-l-sky-600">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Total de Vendas
+            Vendas Concluídas
           </p>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
+          <p className="mt-2 text-2xl font-black text-slate-900">
             {data.totalVendasPeriodo}
           </p>
-          <p className="mt-1 text-xs text-slate-500">Transacções concluídas com sucesso</p>
+          <p className="mt-1 text-xs text-slate-500">Transacções com recibo</p>
         </Card>
 
         <Card className="p-5 border-l-4 border-l-indigo-600">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
             Ticket Médio
           </p>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
+          <p className="mt-2 text-2xl font-black text-slate-900">
             {Number(data.ticketMedioPeriodo).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
           </p>
-          <p className="mt-1 text-xs text-slate-500">Valor médio gasto por venda</p>
+          <p className="mt-1 text-xs text-slate-500">Gasto médio por cliente</p>
         </Card>
       </div>
 

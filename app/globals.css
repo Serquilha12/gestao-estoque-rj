@@ -81,3 +81,33 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Print optimization for 80mm/58mm thermal receipts & vouchers */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  aside,
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  #thermal-receipt {
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 2mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}
+

@@ -141,6 +141,7 @@ export default async function AdminProdutosPage({
                     <th className="px-4 py-3">Categoria</th>
                     {isAdmin && <th className="px-4 py-3 text-right">Compra</th>}
                     <th className="px-4 py-3 text-right">Venda</th>
+                    {isAdmin && <th className="px-4 py-3 text-right">Margem</th>}
                     <th className="px-4 py-3 text-center">Stock Actual</th>
                     <th className="px-4 py-3 text-center">Estado</th>
                     {isAdmin && <th className="px-4 py-3 text-center">Acções</th>}
@@ -149,6 +150,9 @@ export default async function AdminProdutosPage({
                 <tbody className="divide-y divide-slate-100">
                   {produtos.map((produto) => {
                     const stockBaixo = produto.stockActual <= produto.stockMinimo;
+                    const pVenda = Number(produto.precoVenda);
+                    const pCompra = Number(produto.precoCompra);
+                    const margemPct = pVenda > 0 ? (((pVenda - pCompra) / pVenda) * 100).toFixed(1) : '0.0';
                     return (
                       <tr
                         key={produto.id}
@@ -169,12 +173,27 @@ export default async function AdminProdutosPage({
                         </td>
                         {isAdmin && (
                           <td className="px-4 py-3 text-right text-slate-500 font-medium">
-                            {Number(produto.precoCompra).toFixed(2)} MT
+                            {pCompra.toFixed(2)} MT
                           </td>
                         )}
                         <td className="px-4 py-3 text-right font-black text-emerald-700">
-                          {Number(produto.precoVenda).toFixed(2)} MT
+                          {pVenda.toFixed(2)} MT
                         </td>
+                        {isAdmin && (
+                          <td className="px-4 py-3 text-right font-bold">
+                            <span
+                              className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-black ${
+                                Number(margemPct) >= 30
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : Number(margemPct) > 0
+                                  ? 'bg-amber-50 text-amber-700'
+                                  : 'bg-rose-50 text-rose-700'
+                              }`}
+                            >
+                              {margemPct}%
+                            </span>
+                          </td>
+                        )}
                         <td className="px-4 py-3 text-center">
                           {produto.stockActual <= 0 ? (
                             <Badge variant="danger">Esgotado (0)</Badge>

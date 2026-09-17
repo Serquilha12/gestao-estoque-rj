@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { AppSidebar } from './app-sidebar';
 import { AppHeader } from './app-header';
 import { CloseIcon } from '@/src/components/ui/icons';
+import { ToastProvider } from '@/src/components/ui/toast';
 
 export interface DashboardLayoutProps {
   user: {
@@ -19,11 +20,12 @@ export function DashboardLayout({ user, children }: DashboardLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col">
-      {/* 1. Desktop Fixed Vertical Sidebar */}
-      <div className="hidden md:fixed md:inset-y-0 md:left-0 md:z-40 md:flex md:w-64 md:flex-col">
-        <AppSidebar user={user} className="w-64 h-full" />
-      </div>
+    <ToastProvider>
+      <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col">
+        {/* 1. Desktop Fixed Vertical Sidebar */}
+        <div className="hidden md:fixed md:inset-y-0 md:left-0 md:z-40 md:flex md:w-64 md:flex-col">
+          <AppSidebar user={user} className="w-64 h-full" />
+        </div>
 
       {/* 2. Mobile Drawer / Off-Canvas Sidebar */}
       {mobileMenuOpen && (
@@ -69,5 +71,6 @@ export function DashboardLayout({ user, children }: DashboardLayoutProps) {
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }

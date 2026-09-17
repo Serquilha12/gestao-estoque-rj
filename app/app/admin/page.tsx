@@ -13,6 +13,9 @@ import {
   CheckCircleIcon,
   PlusIcon,
   ArrowRightIcon,
+  CashIcon,
+  PhoneIcon,
+  CreditCardIcon,
 } from '@/src/components/ui/icons';
 
 export default async function AdminPage({
@@ -219,6 +222,83 @@ export default async function AdminPage({
           <p className="mt-1 text-xs text-slate-500">
             Produtos em nível crítico ou esgotados
           </p>
+        </Card>
+      </div>
+
+      {/* Financial Intelligence & Cash Register Closing Grid */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+        {/* Capital Imobilizado */}
+        <Card className="p-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md border-slate-700">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+              Capital Imobilizado
+            </span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-800 text-emerald-400 border border-slate-700">
+              <StockIcon size={16} />
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-black text-white">
+            {Number(data.capitalImobilizado).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Valor financeiro actualmente guardado no armazém/stock
+          </p>
+        </Card>
+
+        {/* Lucro Bruto Estimado */}
+        <Card className="p-5 bg-white border-l-4 border-l-emerald-600 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-800">
+              Lucro Bruto ({periodLabels[periodo]})
+            </span>
+            <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-black text-emerald-800">
+              {data.margemLucroPeriodo}% Margem
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-black text-emerald-700">
+            {Number(data.lucroBrutoPeriodo).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            CMV deduzido: {Number(data.cmvPeriodo).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+          </p>
+        </Card>
+
+        {/* Fecho de Caixa Hoje */}
+        <Card className="p-5 bg-white shadow-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+              Fecho de Caixa (Hoje)
+            </span>
+            <span className="text-xs font-black text-slate-900">
+              {Number(data.totalFacturadoHoje).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+            </span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-xl bg-slate-50 p-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px]">
+                <CashIcon size={14} className="text-emerald-600" /> Dinheiro:
+              </span>
+              <span className="font-bold text-slate-900">{Number(data.fechoCaixaHoje.dinheiro).toFixed(0)} MT</span>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px]">
+                <PhoneIcon size={14} className="text-rose-600" /> M-Pesa:
+              </span>
+              <span className="font-bold text-slate-900">{Number(data.fechoCaixaHoje.mpesa).toFixed(0)} MT</span>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px]">
+                <PhoneIcon size={14} className="text-amber-600" /> e-Mola:
+              </span>
+              <span className="font-bold text-slate-900">{Number(data.fechoCaixaHoje.emola).toFixed(0)} MT</span>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px]">
+                <CreditCardIcon size={14} className="text-sky-600" /> Cartão:
+              </span>
+              <span className="font-bold text-slate-900">{Number(data.fechoCaixaHoje.cartao).toFixed(0)} MT</span>
+            </div>
+          </div>
         </Card>
       </div>
 

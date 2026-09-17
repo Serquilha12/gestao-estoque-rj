@@ -110,6 +110,11 @@ export async function createSale(utilizadorId: number, input: SaleCreateInput) {
     return {
       id: venda.id,
       total: total.toFixed(2),
+      metodoPagamento: parsed.data.metodoPagamento,
+      valorRecebido: parsed.data.valorRecebido,
+      troco: parsed.data.troco,
+      referenciaPagamento: parsed.data.referenciaPagamento,
+      observacoes: parsed.data.observacoes,
       itens: calculados,
     };
   });

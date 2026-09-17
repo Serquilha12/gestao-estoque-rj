@@ -12,6 +12,7 @@ import {
   ReportsIcon,
   UsersIcon,
   HistoryIcon,
+  CheckCircleIcon,
 } from '@/src/components/ui/icons';
 import { Badge } from '@/src/components/ui/badge';
 
@@ -37,6 +38,7 @@ export function AppSidebar({ user, onItemClick, className = '' }: AppSidebarProp
     { label: 'Produtos', href: '/app/admin/produtos', icon: <ProductsIcon size={18} /> },
     { label: 'Categorias', href: '/app/admin/categorias', icon: <CategoriesIcon size={18} /> },
     { label: 'Stock & Auditoria', href: '/app/admin/stock', icon: <StockIcon size={18} /> },
+    { label: 'Contagens Cegas', href: '/app/admin/contagens', icon: <CheckCircleIcon size={18} /> },
     { label: 'Relatórios', href: '/app/admin/relatorios', icon: <ReportsIcon size={18} /> },
     { label: 'Utilizadores', href: '/app/admin/users', icon: <UsersIcon size={18} /> },
   ];
