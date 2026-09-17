@@ -35,10 +35,11 @@ export async function uploadProductImage(
       success: true,
       url: publicUrlData.publicUrl,
     };
-  } catch (err: any) {
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : 'Erro inesperado ao enviar imagem para o Supabase Storage.';
     return {
       success: false,
-      error: err?.message || 'Erro inesperado ao enviar imagem para o Supabase Storage.',
+      error: errorMsg,
     };
   }
 }

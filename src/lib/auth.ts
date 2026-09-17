@@ -13,6 +13,14 @@ const databaseUrl =
   process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/tk_vendas';
 
 export const auth = betterAuth({
+  secret:
+    process.env.BETTER_AUTH_SECRET ||
+    process.env.JWT_SECRET ||
+    'tk-rui-junior-better-auth-secret-key-prod-2026',
+  baseURL:
+    process.env.BETTER_AUTH_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
   database: new Pool({
     connectionString: databaseUrl,
   }),
