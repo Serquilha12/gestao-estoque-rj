@@ -130,6 +130,90 @@ export async function clearSessionCookie() {
   cookieStore.delete(SESSION_COOKIE);
 }
 
+export async function findUserByEmail(email: string): Promise<SessionUser | null> {
+  // 1. Prisma ORM
+  try {
+    const user = await db.orm.public.Utilizador.where({ email }).first();
+    if (user && user.activo) {
+      return {
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        perfil: user.perfil,
+        activo: user.activo,
+      };
+    }
+  } catch {
+    // Falha silenciosa para fallback
+  }
+
+  // 2. Supabase REST fallback
+  try {
+    const { supabaseAdmin } = await import('@/src/lib/supabase/admin');
+    const { data } = await supabaseAdmin
+      .from('Utilizador')
+      .select('id, nome, email, perfil, activo')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (data && data.activo) {
+      return {
+        id: Number(data.id),
+        nome: String(data.nome),
+        email: String(data.email),
+        perfil: data.perfil as UserProfile,
+        activo: Boolean(data.activo),
+      };
+    }
+  } catch {
+    // Falha silenciosa
+  }
+
+  return null;
+}
+
+export async function findUserById(id: number): Promise<SessionUser | null> {
+  // 1. Prisma ORM
+  try {
+    const user = await db.orm.public.Utilizador.where({ id }).first();
+    if (user && user.activo) {
+      return {
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        perfil: user.perfil,
+        activo: user.activo,
+      };
+    }
+  } catch {
+    // Falha silenciosa para fallback
+  }
+
+  // 2. Supabase REST fallback
+  try {
+    const { supabaseAdmin } = await import('@/src/lib/supabase/admin');
+    const { data } = await supabaseAdmin
+      .from('Utilizador')
+      .select('id, nome, email, perfil, activo')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (data && data.activo) {
+      return {
+        id: Number(data.id),
+        nome: String(data.nome),
+        email: String(data.email),
+        perfil: data.perfil as UserProfile,
+        activo: Boolean(data.activo),
+      };
+    }
+  } catch {
+    // Falha silenciosa
+  }
+
+  return null;
+}
+
 export async function getCurrentUser(): Promise<SessionUser | null> {
   // 1. Tenta obter sessão ativa via Better Auth
   try {
@@ -138,15 +222,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       headers: head,
     });
     if (session?.user) {
-      const user = await db.orm.public.Utilizador.where({ email: session.user.email }).first();
+      const user = await findUserByEmail(session.user.email);
       if (user && user.activo) {
-        return {
-          id: user.id,
-          nome: user.nome,
-          email: user.email,
-          perfil: user.perfil,
-          activo: user.activo,
-        };
+        return user;
       }
     }
   } catch {
@@ -168,20 +246,14 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     return null;
   }
 
-  const user = await db.orm.public.Utilizador.where({ id: session.id }).first();
+  const user = await findUserById(session.id);
 
   if (!user || !user.activo || user.email !== session.email) {
     await clearSessionCookie();
     return null;
   }
 
-  return {
-    id: user.id,
-    nome: user.nome,
-    email: user.email,
-    perfil: user.perfil,
-    activo: user.activo,
-  };
+  return user;
 }
 
 export async function requireAuth(fallbackPath = '/login') {

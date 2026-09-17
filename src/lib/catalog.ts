@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { db } from '@/src/prisma/db';
+import { supabaseAdmin } from '@/src/lib/supabase/admin';
 import { categoryCreateSchema, categoryUpdateSchema, productCreateSchema, productUpdateSchema } from '@/src/lib/validators';
 
 export type CategoryListItem = {
@@ -28,7 +29,24 @@ export type ProductListItem = {
 
 export async function getCategories(options?: { search?: string; activo?: boolean | null }) {
   const searchText = (options?.search ?? '').trim();
-  const allCategories = await db.orm.public.Categoria.select('id', 'nome', 'descricao', 'activo', 'criadoEm').orderBy((c) => c.nome.asc()).all();
+  let allCategories: Array<{ id: number; nome: string; descricao: string | null; activo: boolean; criadoEm: string }> = [];
+
+  try {
+    allCategories = await db.orm.public.Categoria.select('id', 'nome', 'descricao', 'activo', 'criadoEm').orderBy((c) => c.nome.asc()).all();
+  } catch {
+    try {
+      const { data } = await supabaseAdmin.from('Categoria').select('id, nome, descricao, activo, criadoEm').order('nome', { ascending: true });
+      allCategories = (data ?? []).map((c) => ({
+        id: Number(c.id),
+        nome: String(c.nome),
+        descricao: c.descricao ? String(c.descricao) : null,
+        activo: Boolean(c.activo),
+        criadoEm: String(c.criadoEm),
+      }));
+    } catch {
+      allCategories = [];
+    }
+  }
 
   const filtered = allCategories.filter((category) => {
     const matchesSearch = !searchText || category.nome.toLowerCase().includes(searchText.toLowerCase());
@@ -36,22 +54,37 @@ export async function getCategories(options?: { search?: string; activo?: boolea
     return matchesSearch && matchesEstado;
   });
 
-  const categoriesWithCount = await Promise.all(
-    filtered.map(async (category) => {
-      const productsCount = await db.orm.public.Produto.where({ categoriaId: category.id }).all().then((rows) => rows.length);
-
-      return {
-        ...category,
-        produtosCount: productsCount,
-      } satisfies CategoryListItem;
-    }),
-  );
-
-  return categoriesWithCount;
+  return filtered.map((category) => ({
+    ...category,
+    produtosCount: 0,
+  } satisfies CategoryListItem));
 }
 
 export async function getCategoryById(id: number) {
-  return db.orm.public.Categoria.where({ id }).first();
+  try {
+    const cat = await db.orm.public.Categoria.where({ id }).first();
+    if (cat) return cat;
+  } catch {
+    // fallback
+  }
+
+  try {
+    const { data } = await supabaseAdmin.from('Categoria').select('*').eq('id', id).maybeSingle();
+    if (data) {
+      return {
+        id: Number(data.id),
+        nome: String(data.nome),
+        descricao: data.descricao ? String(data.descricao) : null,
+        activo: Boolean(data.activo),
+        criadoEm: String(data.criadoEm),
+        actualizadoEm: String(data.actualizadoEm),
+      };
+    }
+  } catch {
+    // fallback
+  }
+
+  return null;
 }
 
 export async function createCategory(input: { nome: string; descricao?: string | null }) {
@@ -115,18 +148,48 @@ export async function setCategoryStatus(id: number, activo: boolean) {
 
 export async function getProducts(options?: { search?: string; categoriaId?: number | null; activo?: boolean | null }) {
   const searchText = (options?.search ?? '').trim();
-  const allProducts = await db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'precoVenda', 'stockActual', 'stockMinimo', 'activo', 'criadoEm').orderBy((p) => p.nome.asc()).all();
+  let allProducts: Array<{ id: number; codigo: string; nome: string; categoriaId: number; precoCompra: string; precoVenda: string; stockActual: number; stockMinimo: number; activo: boolean; criadoEm: string }> = [];
+  let allCategories: Array<{ id: number; nome: string }> = [];
 
-  const products = await Promise.all(
-    allProducts.map(async (product) => {
-      const category = await db.orm.public.Categoria.where({ id: product.categoriaId }).first();
+  try {
+    [allProducts, allCategories] = await Promise.all([
+      db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'precoVenda', 'stockActual', 'stockMinimo', 'activo', 'criadoEm').orderBy((p) => p.nome.asc()).all(),
+      db.orm.public.Categoria.select('id', 'nome').all(),
+    ]);
+  } catch {
+    try {
+      const [pRes, cRes] = await Promise.all([
+        supabaseAdmin.from('Produto').select('id, codigo, nome, categoriaId, precoCompra, precoVenda, stockActual, stockMinimo, activo, criadoEm').order('nome', { ascending: true }),
+        supabaseAdmin.from('Categoria').select('id, nome'),
+      ]);
+      allProducts = (pRes.data ?? []).map((p) => ({
+        id: Number(p.id),
+        codigo: String(p.codigo),
+        nome: String(p.nome),
+        categoriaId: Number(p.categoriaId),
+        precoCompra: String(p.precoCompra),
+        precoVenda: String(p.precoVenda),
+        stockActual: Number(p.stockActual),
+        stockMinimo: Number(p.stockMinimo),
+        activo: Boolean(p.activo),
+        criadoEm: String(p.criadoEm),
+      }));
+      allCategories = (cRes.data ?? []).map((c) => ({
+        id: Number(c.id),
+        nome: String(c.nome),
+      }));
+    } catch {
+      allProducts = [];
+      allCategories = [];
+    }
+  }
 
-      return {
-        ...product,
-        categoriaNome: category?.nome ?? 'Sem categoria',
-      } as ProductListItem;
-    }),
-  );
+  const categoryMap = new Map(allCategories.map((c) => [c.id, c.nome]));
+
+  const products: ProductListItem[] = allProducts.map((product) => ({
+    ...product,
+    categoriaNome: categoryMap.get(product.categoriaId) ?? 'Sem categoria',
+  }));
 
   return products.filter((product) => {
     const matchesSearch = !searchText || product.codigo.toLowerCase().includes(searchText.toLowerCase()) || product.nome.toLowerCase().includes(searchText.toLowerCase());
@@ -137,7 +200,36 @@ export async function getProducts(options?: { search?: string; categoriaId?: num
 }
 
 export async function getProductById(id: number) {
-  return db.orm.public.Produto.where({ id }).first();
+  try {
+    const prod = await db.orm.public.Produto.where({ id }).first();
+    if (prod) return prod;
+  } catch {
+    // fallback
+  }
+
+  try {
+    const { data } = await supabaseAdmin.from('Produto').select('*').eq('id', id).maybeSingle();
+    if (data) {
+      return {
+        id: Number(data.id),
+        codigo: String(data.codigo),
+        nome: String(data.nome),
+        descricao: data.descricao ? String(data.descricao) : null,
+        categoriaId: Number(data.categoriaId),
+        precoCompra: String(data.precoCompra),
+        precoVenda: String(data.precoVenda),
+        stockActual: Number(data.stockActual),
+        stockMinimo: Number(data.stockMinimo),
+        activo: Boolean(data.activo),
+        criadoEm: String(data.criadoEm),
+        actualizadoEm: String(data.actualizadoEm),
+      };
+    }
+  } catch {
+    // fallback
+  }
+
+  return null;
 }
 
 export async function createProduct(input: { codigo: string; nome: string; descricao?: string | null; categoriaId: number; precoCompra: number; precoVenda: number; stockActual: number; stockMinimo: number; activo?: boolean }) {

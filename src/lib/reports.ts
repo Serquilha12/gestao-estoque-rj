@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { db } from '@/src/prisma/db';
+import { supabaseAdmin } from '@/src/lib/supabase/admin';
 
 export type PeriodFilter = 'hoje' | '7d' | '30d' | 'mes' | 'todos' | 'personalizado';
 
@@ -135,6 +136,73 @@ function parseMoney(val: unknown): number {
   return Number.isFinite(num) ? num : 0;
 }
 
+type RawData = {
+  vendas: Array<{ id: number; utilizadorId: number; total: string; criadoEm: string }>;
+  itensVenda: Array<{ id: number; vendaId: number; produtoId: number; quantidade: number; subtotal: string }>;
+  produtos: Array<{ id: number; codigo: string; nome: string; categoriaId: number; precoCompra: string; precoVenda: string; stockActual: number; stockMinimo: number; activo: boolean }>;
+  categorias: Array<{ id: number; nome: string; activo: boolean }>;
+  movimentosRaw: Array<{ id: number; produtoId: number; utilizadorId: number; tipo: string; quantidade: number; stockAnterior: number; stockPosterior: number; motivo: string | null; criadoEm: string }>;
+  utilizadores: Array<{ id: number; nome: string }>;
+};
+
+async function fetchRawData(): Promise<RawData> {
+  // 1. Tenta consulta direta via Prisma ORM
+  try {
+    const [vendas, itensVenda, produtos, categorias, movimentosRaw, utilizadores] = await Promise.all([
+      db.orm.public.Venda.select('id', 'utilizadorId', 'total', 'criadoEm').orderBy((v) => v.criadoEm.desc()).all(),
+      db.orm.public.ItemVenda.select('id', 'vendaId', 'produtoId', 'quantidade', 'subtotal').all(),
+      db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'precoVenda', 'stockActual', 'stockMinimo', 'activo').all(),
+      db.orm.public.Categoria.select('id', 'nome', 'activo').all(),
+      db.orm.public.MovimentoStock.select('id', 'produtoId', 'utilizadorId', 'tipo', 'quantidade', 'stockAnterior', 'stockPosterior', 'motivo', 'criadoEm')
+        .orderBy((m) => m.criadoEm.desc())
+        .all(),
+      db.orm.public.Utilizador.select('id', 'nome').all(),
+    ]);
+
+    return {
+      vendas: vendas.map((v) => ({ id: v.id, utilizadorId: v.utilizadorId, total: String(v.total), criadoEm: String(v.criadoEm) })),
+      itensVenda: itensVenda.map((i) => ({ id: i.id, vendaId: i.vendaId, produtoId: i.produtoId, quantidade: i.quantidade, subtotal: String(i.subtotal) })),
+      produtos: produtos.map((p) => ({ id: p.id, codigo: p.codigo, nome: p.nome, categoriaId: p.categoriaId, precoCompra: String(p.precoCompra), precoVenda: String(p.precoVenda), stockActual: p.stockActual, stockMinimo: p.stockMinimo, activo: p.activo })),
+      categorias: categorias.map((c) => ({ id: c.id, nome: c.nome, activo: c.activo ?? true })),
+      movimentosRaw: movimentosRaw.map((m) => ({ id: m.id, produtoId: m.produtoId, utilizadorId: m.utilizadorId, tipo: String(m.tipo), quantidade: m.quantidade, stockAnterior: m.stockAnterior, stockPosterior: m.stockPosterior, motivo: m.motivo, criadoEm: String(m.criadoEm) })),
+      utilizadores: utilizadores.map((u) => ({ id: u.id, nome: u.nome })),
+    };
+  } catch (err) {
+    console.warn('Prisma ORM inacessível para relatórios, fallback Supabase REST:', err);
+  }
+
+  // 2. Fallback resiliente via Supabase REST
+  try {
+    const [vendasRes, itensRes, produtosRes, categoriasRes, movimentosRes, utilizadoresRes] = await Promise.all([
+      supabaseAdmin.from('Venda').select('id, utilizadorId, total, criadoEm').order('criadoEm', { ascending: false }),
+      supabaseAdmin.from('ItemVenda').select('id, vendaId, produtoId, quantidade, subtotal'),
+      supabaseAdmin.from('Produto').select('id, codigo, nome, categoriaId, precoCompra, precoVenda, stockActual, stockMinimo, activo'),
+      supabaseAdmin.from('Categoria').select('id, nome, activo'),
+      supabaseAdmin.from('MovimentoStock').select('id, produtoId, utilizadorId, tipo, quantidade, stockAnterior, stockPosterior, motivo, criadoEm').order('criadoEm', { ascending: false }),
+      supabaseAdmin.from('Utilizador').select('id, nome'),
+    ]);
+
+    return {
+      vendas: (vendasRes.data ?? []).map((v) => ({ id: Number(v.id), utilizadorId: Number(v.utilizadorId), total: String(v.total), criadoEm: String(v.criadoEm) })),
+      itensVenda: (itensRes.data ?? []).map((i) => ({ id: Number(i.id), vendaId: Number(i.vendaId), produtoId: Number(i.produtoId), quantidade: Number(i.quantidade), subtotal: String(i.subtotal) })),
+      produtos: (produtosRes.data ?? []).map((p) => ({ id: Number(p.id), codigo: String(p.codigo), nome: String(p.nome), categoriaId: Number(p.categoriaId), precoCompra: String(p.precoCompra), precoVenda: String(p.precoVenda), stockActual: Number(p.stockActual), stockMinimo: Number(p.stockMinimo), activo: Boolean(p.activo) })),
+      categorias: (categoriasRes.data ?? []).map((c) => ({ id: Number(c.id), nome: String(c.nome), activo: Boolean(c.activo) })),
+      movimentosRaw: (movimentosRes.data ?? []).map((m) => ({ id: Number(m.id), produtoId: Number(m.produtoId), utilizadorId: Number(m.utilizadorId), tipo: String(m.tipo), quantidade: Number(m.quantidade), stockAnterior: Number(m.stockAnterior), stockPosterior: Number(m.stockPosterior), motivo: m.motivo ? String(m.motivo) : null, criadoEm: String(m.criadoEm) })),
+      utilizadores: (utilizadoresRes.data ?? []).map((u) => ({ id: Number(u.id), nome: String(u.nome) })),
+    };
+  } catch (fallbackErr) {
+    console.error('Falha no fallback Supabase REST para relatórios:', fallbackErr);
+    return {
+      vendas: [],
+      itensVenda: [],
+      produtos: [],
+      categorias: [],
+      movimentosRaw: [],
+      utilizadores: [],
+    };
+  }
+}
+
 export async function getTopSellingProducts(options?: {
   limit?: number;
   dataInicio?: string | null;
@@ -144,13 +212,7 @@ export async function getTopSellingProducts(options?: {
 }): Promise<TopSellingProduct[]> {
   const limit = options?.limit ?? 5;
   const { start, end } = resolveDateRange(options);
-
-  const [vendas, itensVenda, produtos, categorias] = await Promise.all([
-    db.orm.public.Venda.select('id', 'utilizadorId', 'criadoEm').all(),
-    db.orm.public.ItemVenda.select('id', 'vendaId', 'produtoId', 'quantidade', 'subtotal').all(),
-    db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'stockActual', 'stockMinimo', 'activo').all(),
-    db.orm.public.Categoria.select('id', 'nome').all(),
-  ]);
+  const { vendas, itensVenda, produtos, categorias } = await fetchRawData();
 
   const categoriaMap = new Map(categorias.map((c) => [c.id, c.nome]));
   const produtoMap = new Map(produtos.map((p) => [p.id, p]));
@@ -197,13 +259,7 @@ export async function getTopSellingProducts(options?: {
 }
 
 export async function getLowStockProducts(): Promise<LowStockProduct[]> {
-  const [produtos, categorias] = await Promise.all([
-    db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoVenda', 'stockActual', 'stockMinimo', 'activo')
-      .orderBy((p) => p.stockActual.asc())
-      .all(),
-    db.orm.public.Categoria.select('id', 'nome').all(),
-  ]);
-
+  const { produtos, categorias } = await fetchRawData();
   const categoriaMap = new Map(categorias.map((c) => [c.id, c.nome]));
 
   return produtos
@@ -232,16 +288,7 @@ export async function getAdminDashboard(options?: {
   const hojeInicio = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
   const hojeFim = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-  const [vendas, itensVenda, produtos, categorias, movimentosRaw, utilizadores] = await Promise.all([
-    db.orm.public.Venda.select('id', 'utilizadorId', 'total', 'criadoEm').orderBy((v) => v.criadoEm.desc()).all(),
-    db.orm.public.ItemVenda.select('id', 'vendaId', 'produtoId', 'quantidade', 'subtotal').all(),
-    db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'precoVenda', 'stockActual', 'stockMinimo', 'activo').all(),
-    db.orm.public.Categoria.select('id', 'nome', 'activo').all(),
-    db.orm.public.MovimentoStock.select('id', 'produtoId', 'utilizadorId', 'tipo', 'quantidade', 'stockAnterior', 'stockPosterior', 'motivo', 'criadoEm')
-      .orderBy((m) => m.criadoEm.desc())
-      .all(),
-    db.orm.public.Utilizador.select('id', 'nome').all(),
-  ]);
+  const { vendas, itensVenda, produtos, categorias, movimentosRaw, utilizadores } = await fetchRawData();
 
   const produtoMap = new Map(produtos.map((p) => [p.id, p]));
   const utilizadorMap = new Map(utilizadores.map((u) => [u.id, u.nome]));
@@ -403,12 +450,8 @@ export async function getAttendantDashboard(
   const hojeInicio = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
   const hojeFim = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-  const [vendas, itensVenda, produtos, categorias] = await Promise.all([
-    db.orm.public.Venda.where({ utilizadorId }).orderBy((v) => v.criadoEm.desc()).all(),
-    db.orm.public.ItemVenda.select('id', 'vendaId', 'produtoId', 'quantidade', 'subtotal').all(),
-    db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoVenda', 'stockActual', 'stockMinimo', 'activo').all(),
-    db.orm.public.Categoria.select('id', 'nome').all(),
-  ]);
+  const { vendas: allVendas, itensVenda, produtos, categorias } = await fetchRawData();
+  const vendas = allVendas.filter((v) => v.utilizadorId === utilizadorId);
 
   const produtoMap = new Map(produtos.map((p) => [p.id, p]));
   const categoriaMap = new Map(categorias.map((c) => [c.id, c.nome]));
