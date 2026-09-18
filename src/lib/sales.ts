@@ -3,6 +3,7 @@ import 'server-only';
 import { db, canUsePrisma, reportPrismaSuccess, reportPrismaFailure } from '@/src/prisma/db';
 import { supabaseAdmin } from '@/src/lib/supabase/admin';
 import { saleCreateSchema, type SaleCreateInput } from '@/src/lib/validators';
+import { recordSalePayment, getSalePaymentMethod } from '@/src/lib/sales-payments';
 
 export type SaleCartItem = {
   produtoId: number;
@@ -107,9 +108,17 @@ export async function createSale(utilizadorId: number, input: SaleCreateInput) {
           quantidade: item.quantidade,
           stockAnterior: prevStock,
           stockPosterior: postStock,
-          motivo: `Venda #${venda.id}`,
+          motivo: `Venda #${venda.id} [${parsed.data.metodoPagamento}]`,
         });
       }
+
+      recordSalePayment({
+        vendaId: Number(venda.id),
+        metodoPagamento: parsed.data.metodoPagamento,
+        total: total.toFixed(2),
+        criadoEm: new Date().toISOString(),
+        referenciaPagamento: parsed.data.referenciaPagamento,
+      });
 
       return {
         id: venda.id,
@@ -203,9 +212,17 @@ export async function createSale(utilizadorId: number, input: SaleCreateInput) {
         quantidade: item.quantidade,
         stockAnterior: prevStock,
         stockPosterior: postStock,
-        motivo: `Venda #${venda.id}`,
+        motivo: `Venda #${venda.id} [${parsed.data.metodoPagamento}]`,
       });
     }
+
+    recordSalePayment({
+      vendaId: Number(venda.id),
+      metodoPagamento: parsed.data.metodoPagamento,
+      total: total.toFixed(2),
+      criadoEm: new Date().toISOString(),
+      referenciaPagamento: parsed.data.referenciaPagamento,
+    });
 
     return {
       id: Number(venda.id),
@@ -255,6 +272,7 @@ export async function getSales(utilizadorId: number, perfil: 'ADMINISTRADOR' | '
     utilizadorId: Number(venda.utilizadorId),
     total: String(venda.total),
     criadoEm: String(venda.criadoEm),
+    metodoPagamento: getSalePaymentMethod(Number(venda.id)),
     utilizadorNome: utilizadores.find((utilizador) => Number(utilizador.id) === Number(venda.utilizadorId))?.nome ?? 'Utilizador',
   }));
 }
@@ -278,6 +296,7 @@ export type SaleDetail = {
   utilizadorId: number;
   total: string;
   criadoEm: string;
+  metodoPagamento: 'DINHEIRO' | 'MPESA' | 'EMOLA' | 'CARTAO' | 'OUTRO';
   utilizadorNome: string;
   itens: SaleDetailItem[];
 };
@@ -299,6 +318,7 @@ export async function getSaleById(id: number, utilizadorId: number, perfil: 'ADM
         utilizadorId: Number(venda.utilizadorId),
         total: String(venda.total),
         criadoEm: String(venda.criadoEm),
+        metodoPagamento: getSalePaymentMethod(Number(venda.id)),
         utilizadorNome: utilizador?.nome ?? 'Utilizador',
         itens: itens.map((item) => ({
           id: Number(item.id),
@@ -334,6 +354,7 @@ export async function getSaleById(id: number, utilizadorId: number, perfil: 'ADM
         utilizadorId: Number(vData.utilizadorId),
         total: String(vData.total),
         criadoEm: String(vData.criadoEm),
+        metodoPagamento: getSalePaymentMethod(Number(vData.id)),
         utilizadorNome: uRes.data?.nome ?? 'Utilizador',
         itens: itemsList.map((item) => ({
           id: Number(item.id),

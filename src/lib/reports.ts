@@ -2,6 +2,7 @@ import 'server-only';
 
 import { db, canUsePrisma, reportPrismaSuccess, reportPrismaFailure } from '@/src/prisma/db';
 import { supabaseAdmin } from '@/src/lib/supabase/admin';
+import { getSalePaymentMethod } from '@/src/lib/sales-payments';
 
 export type PeriodFilter = 'hoje' | '7d' | '30d' | 'mes' | 'todos' | 'personalizado';
 
@@ -300,6 +301,29 @@ export async function getAdminDashboard(options?: {
   let totalVendasHoje = 0;
   let totalFacturadoHojeNum = 0;
 
+  // Totais reais por método de pagamento para o fecho de caixa de hoje
+  const totaisMetodosHoje = {
+    dinheiro: 0,
+    mpesa: 0,
+    emola: 0,
+    cartao: 0,
+    outro: 0,
+  };
+
+  // Mapear motivos dos movimentos por vendaId para identificação do método
+  const motivoPorVendaId = new Map<number, string>();
+  for (const m of movimentosRaw) {
+    if (m.motivo) {
+      const match = m.motivo.match(/Venda #(\d+)/i);
+      if (match?.[1]) {
+        const vId = Number(match[1]);
+        if (!motivoPorVendaId.has(vId)) {
+          motivoPorVendaId.set(vId, m.motivo);
+        }
+      }
+    }
+  }
+
   let totalVendasPeriodo = 0;
   let totalFacturadoPeriodoNum = 0;
   const vendasPeriodoIds = new Set<number>();
@@ -308,9 +332,37 @@ export async function getAdminDashboard(options?: {
     const dataVenda = new Date(venda.criadoEm);
     const valor = parseMoney(venda.total);
 
-    if (dataVenda >= hojeInicio && dataVenda <= hojeFim) {
+    const isHoje =
+      (dataVenda >= hojeInicio && dataVenda <= hojeFim) ||
+      (dataVenda.getUTCFullYear() === now.getUTCFullYear() &&
+       dataVenda.getUTCMonth() === now.getUTCMonth() &&
+       dataVenda.getUTCDate() === now.getUTCDate()) ||
+      (dataVenda.getFullYear() === now.getFullYear() &&
+       dataVenda.getMonth() === now.getMonth() &&
+       dataVenda.getDate() === now.getDate());
+
+    if (isHoje) {
       totalVendasHoje++;
       totalFacturadoHojeNum += valor;
+
+      const metodo = getSalePaymentMethod(venda.id, motivoPorVendaId.get(venda.id));
+      switch (metodo) {
+        case 'DINHEIRO':
+          totaisMetodosHoje.dinheiro += valor;
+          break;
+        case 'MPESA':
+          totaisMetodosHoje.mpesa += valor;
+          break;
+        case 'EMOLA':
+          totaisMetodosHoje.emola += valor;
+          break;
+        case 'CARTAO':
+          totaisMetodosHoje.cartao += valor;
+          break;
+        default:
+          totaisMetodosHoje.outro += valor;
+          break;
+      }
     }
 
     const inPeriod = (!start || dataVenda >= start) && (!end || dataVenda <= end);
@@ -406,13 +458,13 @@ export async function getAdminDashboard(options?: {
     ? ((lucroBrutoNum / totalFacturadoPeriodoNum) * 100).toFixed(1)
     : '0.0';
 
-  // Desdobramento para Fecho de Caixa Hoje
+  // Desdobramento para Fecho de Caixa Hoje (valores reais por método de pagamento)
   const fechoCaixaHoje = {
-    dinheiro: (totalFacturadoHojeNum * 0.50).toFixed(2),
-    mpesa: (totalFacturadoHojeNum * 0.35).toFixed(2),
-    emola: (totalFacturadoHojeNum * 0.10).toFixed(2),
-    cartao: (totalFacturadoHojeNum * 0.05).toFixed(2),
-    outro: '0.00',
+    dinheiro: totaisMetodosHoje.dinheiro.toFixed(2),
+    mpesa: totaisMetodosHoje.mpesa.toFixed(2),
+    emola: totaisMetodosHoje.emola.toFixed(2),
+    cartao: totaisMetodosHoje.cartao.toFixed(2),
+    outro: totaisMetodosHoje.outro.toFixed(2),
   };
 
   return {

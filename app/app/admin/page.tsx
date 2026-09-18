@@ -322,7 +322,7 @@ export default async function AdminPage({
                 <CashIcon size={14} className="text-zinc-900 dark:text-white" /> Dinheiro:
               </span>
               <span className="font-bold text-zinc-900 dark:text-white">
-                {Number(data.fechoCaixaHoje.dinheiro).toFixed(0)} MT
+                {Number(data.fechoCaixaHoje.dinheiro).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
               </span>
             </div>
             <div className="rounded-xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 p-3 flex items-center justify-between">
@@ -330,7 +330,7 @@ export default async function AdminPage({
                 <PhoneIcon size={14} className="text-zinc-900 dark:text-white" /> M-Pesa:
               </span>
               <span className="font-bold text-zinc-900 dark:text-white">
-                {Number(data.fechoCaixaHoje.mpesa).toFixed(0)} MT
+                {Number(data.fechoCaixaHoje.mpesa).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
               </span>
             </div>
             <div className="rounded-xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 p-3 flex items-center justify-between">
@@ -338,7 +338,7 @@ export default async function AdminPage({
                 <PhoneIcon size={14} className="text-zinc-900 dark:text-white" /> e-Mola:
               </span>
               <span className="font-bold text-zinc-900 dark:text-white">
-                {Number(data.fechoCaixaHoje.emola).toFixed(0)} MT
+                {Number(data.fechoCaixaHoje.emola).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
               </span>
             </div>
             <div className="rounded-xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 p-3 flex items-center justify-between">
@@ -346,9 +346,19 @@ export default async function AdminPage({
                 <CreditCardIcon size={14} className="text-zinc-900 dark:text-white" /> Cartão:
               </span>
               <span className="font-bold text-zinc-900 dark:text-white">
-                {Number(data.fechoCaixaHoje.cartao).toFixed(0)} MT
+                {Number(data.fechoCaixaHoje.cartao).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
               </span>
             </div>
+            {Number(data.fechoCaixaHoje.outro) > 0 && (
+              <div className="rounded-xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 p-3 flex items-center justify-between col-span-2">
+                <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-semibold text-[11px]">
+                  Outro:
+                </span>
+                <span className="font-bold text-zinc-900 dark:text-white">
+                  {Number(data.fechoCaixaHoje.outro).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

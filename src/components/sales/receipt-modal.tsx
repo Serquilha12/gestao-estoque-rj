@@ -115,7 +115,7 @@ export function ReceiptModal({ receipt, isOpen, onClose, onNewSale }: ReceiptMod
               <p className="text-sm font-black uppercase tracking-wider text-slate-900">Take Away Rui Júnior</p>
               <p className="text-[10px] text-slate-600">Serviço de Restauração & Balcão</p>
               <p className="text-[10px] text-slate-500">Pemba • Cabo Delgado</p>
-              <p className="text-[10px] text-slate-500">Tel: +258 84 000 0000</p>
+              <p className="text-[10px] text-slate-500">Tel: +258 86 223 8700 / +258 83 450 8556</p>
             </div>
 
             {/* Sale metadata */}

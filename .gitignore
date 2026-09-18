@@ -31,8 +31,9 @@ prisma/*.db-journal
 prisma/*.db-shm
 prisma/*.db-wal
 
-# Vercel
+# Vercel & Cloudflare
 .vercel
+.open-next
 
 # TypeScript
 *.tsbuildinfo

@@ -53,12 +53,24 @@ export function AppSidebar({ user, onItemClick, className = '' }: AppSidebarProp
 
   const navItems = isAdmin ? adminNavItems : attendantNavItems;
 
-  const isActive = (href: string) => {
-    if (href === '/app/admin' || href === '/app/atendente') {
-      return pathname === href;
-    }
-    return pathname.startsWith(href);
-  };
+  // Determina qual item de navegação é a correspondência mais específica para o pathname atual
+  const activeHref = React.useMemo(() => {
+    if (!pathname) return null;
+
+    const matches = navItems.filter((item) => {
+      if (pathname === item.href) return true;
+      if (pathname.startsWith(`${item.href}/`)) return true;
+      return false;
+    });
+
+    if (matches.length === 0) return null;
+
+    return matches.reduce((prev, curr) =>
+      curr.href.length > prev.href.length ? curr : prev
+    ).href;
+  }, [navItems, pathname]);
+
+  const isActive = (href: string) => activeHref === href;
 
   return (
     <div
