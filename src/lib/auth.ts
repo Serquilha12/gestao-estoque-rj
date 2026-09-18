@@ -220,45 +220,42 @@ export async function findUserById(id: number): Promise<SessionUser | null> {
 }
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
-  // 1. Tenta obter sessão ativa via Better Auth
+  // 1. Verificação instantânea do JWT de sessão (0ms de latência, verificação em memória)
   try {
-    const head = await headers();
-    const session = await auth.api.getSession({
-      headers: head,
-    });
-    if (session?.user) {
-      const user = await findUserByEmail(session.user.email);
-      if (user && user.activo) {
-        return user;
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE)?.value;
+
+    if (token) {
+      const session = await verifySessionToken(token);
+      if (session) {
+        // Sessão criptograficamente assinada e válida
+        return session;
       }
+      await clearSessionCookie();
     }
   } catch {
-    // Continua para verificação via cookie de sessão
+    // Continua
   }
 
-  // 2. Verificação via cookie de sessão
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-
-  if (!token) {
-    return null;
+  // 2. Fallback para Better Auth apenas se Prisma estiver ativo e não estivermos em modo REST
+  if (canUsePrisma()) {
+    try {
+      const head = await headers();
+      const session = await auth.api.getSession({
+        headers: head,
+      });
+      if (session?.user) {
+        const user = await findUserByEmail(session.user.email);
+        if (user && user.activo) {
+          return user;
+        }
+      }
+    } catch {
+      // Continua para verificação via cookie de sessão
+    }
   }
 
-  const session = await verifySessionToken(token);
-
-  if (!session) {
-    await clearSessionCookie();
-    return null;
-  }
-
-  const user = await findUserById(session.id);
-
-  if (!user || !user.activo || user.email !== session.email) {
-    await clearSessionCookie();
-    return null;
-  }
-
-  return user;
+  return null;
 }
 
 export async function requireAuth(fallbackPath = '/login') {

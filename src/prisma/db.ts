@@ -26,6 +26,9 @@ let prismaUsable: boolean = !isVercel && process.env.FORCE_SUPABASE_REST !== 'tr
 export function canUsePrisma(): boolean {
   if (process.env.FORCE_PRISMA === 'true') return true;
   if (process.env.FORCE_SUPABASE_REST === 'true') return false;
+  // No Cloudflare Workers runtime (workerd), conexões TCP raw ao Postgres não são suportadas sem Hyperdrive.
+  if (typeof (globalThis as any).WebSocketPair !== 'undefined') return false;
+  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production' && !isVercel) return false;
   return prismaUsable;
 }
 
