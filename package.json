@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "build:pages": "npx @cloudflare/next-on-pages",
-    "build:cloudflare": "opennextjs-cloudflare build",
+    "build:cloudflare": "node -e \"const fs=require('fs'); ['eciesjs', '@ecies'].forEach(d => { try { fs.rmSync('node_modules/' + d, { recursive: true, force: true }); } catch(e) {} })\" && opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy:cloudflare": "opennextjs-cloudflare build && wrangler deploy",
     "start": "next start",
@@ -52,6 +52,7 @@
     "wrangler": "^4.142.0"
   },
   "overrides": {
-    "@dotenvx/dotenvx": "npm:dotenv@^16.4.7"
+    "@dotenvx/dotenvx": "npm:dotenv@^16.4.7",
+    "eciesjs": "npm:dotenv@^16.4.7"
   }
 }
