@@ -52,8 +52,6 @@
     "wrangler": "^4.142.0"
   },
   "overrides": {
-    "@dotenvx/dotenvx": {
-      "@noble/ciphers": "1.3.0"
-    }
+    "@dotenvx/dotenvx": "npm:dotenv@^16.4.7"
   }
 }
