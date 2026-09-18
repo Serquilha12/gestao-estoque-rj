@@ -10,6 +10,15 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://cthlxdthphyburagyxvv.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aGx4ZHRocGh5YnVyYWd5eHZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTI3MDYsImV4cCI6MjEwNTgyODcwNn0.Ka8E_HFtaGYwkX4LxwIucU6A2030NDZiDNsykoY3YZg",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aGx4ZHRocGh5YnVyYWd5eHZ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDI1MjcwNiwiZXhwIjoyMTA1ODI4NzA2fQ.StUygYH6GCMzFuyaPo6OFzkWeDZ-Q9SaHAn490-lZ4U",
+    "DATABASE_URL": "postgresql://postgres:d4tCFVcTuz9rx9XgG^Dp@db.cthlxdthphyburagyxvv.supabase.co:5432/postgres",
+    "JWT_SECRET": "tk-rui-junior-secret-key-prod-2026-safe-token",
+    "BETTER_AUTH_SECRET": "tk-rui-junior-secret-key-prod-2026-safe-token",
+    "FORCE_SUPABASE_REST": "true"
+  },
   "observability": {
     "enabled": true
   }

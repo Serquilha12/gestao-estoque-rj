@@ -11,11 +11,15 @@ import { loginSchema } from '@/src/lib/validators';
 async function findUserByEmail(email: string) {
   // 1. Tenta consulta via Supabase REST (instantâneo via HTTPS)
   try {
-    const { data } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('Utilizador')
       .select('*')
       .eq('email', email)
       .maybeSingle();
+
+    if (error) {
+      console.error('[Auth Login] Erro no Supabase REST:', error.message || error);
+    }
 
     if (data) {
       return {
@@ -27,15 +31,15 @@ async function findUserByEmail(email: string) {
         activo: Boolean(data.activo),
       };
     }
-  } catch {
-    // Falha silenciosa para fallback
+  } catch (err) {
+    console.error('[Auth Login] Exceção ao consultar Supabase REST:', err);
   }
 
   // 2. Consulta direta via Prisma ORM
   try {
     const user = await db.orm.public.Utilizador.where({ email }).first();
     if (user) return user;
-  } catch {
+  } catch (err) {
     // Falha silenciosa
   }
 
