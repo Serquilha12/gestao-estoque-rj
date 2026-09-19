@@ -214,15 +214,15 @@ export async function DELETE(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const { id } = body as { id?: number };
+  const { id, action } = body as { id?: number; action?: 'deactivate' | 'delete' };
 
   if (!id || typeof id !== 'number') {
     return NextResponse.json({ error: 'ID do utilizador é obrigatório.' }, { status: 400 });
   }
 
-  // Não pode remover a si mesmo
+  // Não pode remover ou desactivar a si mesmo
   if (id === currentUser.id) {
-    return NextResponse.json({ error: 'Não pode desactivar a sua própria conta.' }, { status: 400 });
+    return NextResponse.json({ error: 'Não pode remover ou desactivar a sua própria conta.' }, { status: 400 });
   }
 
   const allUsers = await getAllUsers();
@@ -232,22 +232,59 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Utilizador não encontrado.' }, { status: 404 });
   }
 
-  // Impedir desactivar o último admin
-  if (targetUser.perfil === 'ADMINISTRADOR' && targetUser.activo) {
-    const activeAdmins = allUsers.filter((u) => u.perfil === 'ADMINISTRADOR' && u.activo);
-    if (activeAdmins.length <= 1) {
-      return NextResponse.json({ error: 'Não pode desactivar o último administrador activo.' }, { status: 400 });
+  // Se a acção for desactivação (soft-delete)
+  if (action === 'deactivate') {
+    if (targetUser.perfil === 'ADMINISTRADOR' && targetUser.activo) {
+      const activeAdmins = allUsers.filter((u) => u.perfil === 'ADMINISTRADOR' && u.activo);
+      if (activeAdmins.length <= 1) {
+        return NextResponse.json({ error: 'Não pode desactivar o único administrador activo.' }, { status: 400 });
+      }
+    }
+
+    try {
+      await db.orm.public.Utilizador.where({ id }).update({ activo: false });
+      return NextResponse.json({ ok: true, message: 'Utilizador desactivado com sucesso.' });
+    } catch {
+      const { error } = await supabaseAdmin.from('Utilizador').update({ activo: false }).eq('id', id);
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json({ ok: true, message: 'Utilizador desactivado com sucesso.' });
     }
   }
 
-  try {
-    await db.orm.public.Utilizador.where({ id }).update({ activo: false });
-    return NextResponse.json({ ok: true, message: 'Utilizador desactivado com sucesso.' });
-  } catch {
-    const { error } = await supabaseAdmin.from('Utilizador').update({ activo: false }).eq('id', id);
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+  // Remoção permanente (default ou action === 'delete')
+  if (targetUser.perfil === 'ADMINISTRADOR' && targetUser.activo) {
+    const activeAdmins = allUsers.filter((u) => u.perfil === 'ADMINISTRADOR' && u.activo);
+    if (activeAdmins.length <= 1) {
+      return NextResponse.json({ error: 'Não pode remover o único administrador activo do sistema.' }, { status: 400 });
     }
-    return NextResponse.json({ ok: true, message: 'Utilizador desactivado com sucesso.' });
+  }
+
+  // Reatribuir histórico de vendas e movimentos ao admin actual para preservar auditoria e integridade referencial
+  try {
+    await supabaseAdmin.from('Venda').update({ utilizadorId: currentUser.id }).eq('utilizadorId', id);
+    await supabaseAdmin.from('MovimentoStock').update({ utilizadorId: currentUser.id }).eq('utilizadorId', id);
+  } catch (err) {
+    console.error('Erro ao reatribuir histórico no Supabase:', err);
+  }
+
+  try {
+    await db.orm.public.Venda.where({ utilizadorId: id }).update({ utilizadorId: currentUser.id });
+    await db.orm.public.MovimentoStock.where({ utilizadorId: id }).update({ utilizadorId: currentUser.id });
+  } catch {
+    // fallback tratado pelo supabaseAdmin
+  }
+
+  // Eliminar o registo do utilizador
+  try {
+    await db.orm.public.Utilizador.where({ id }).delete();
+    return NextResponse.json({ ok: true, message: 'Utilizador removido permanentemente com sucesso.' });
+  } catch {
+    const { error } = await supabaseAdmin.from('Utilizador').delete().eq('id', id);
+    if (error) {
+      return NextResponse.json({ error: error.message || 'Erro ao remover utilizador.' }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, message: 'Utilizador removido permanentemente com sucesso.' });
   }
 }

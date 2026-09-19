@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/src/components/ui/ca
 import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
 import { FormField, Input, Select } from '@/src/components/ui/input';
-import { PlusIcon, UserXIcon, ShieldIcon } from '@/src/components/ui/icons';
+import { PlusIcon, UserXIcon, ShieldIcon, TrashIcon } from '@/src/components/ui/icons';
 
 type User = {
   id: number;
@@ -76,7 +76,7 @@ export function UsersManagement({
         const res = await fetch('/api/admin/users', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: userId }),
+          body: JSON.stringify({ id: userId, action: 'deactivate' }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -115,6 +115,32 @@ export function UsersManagement({
       } catch {
         setError('Erro de rede.');
       }
+    }
+  }
+
+  async function handleDeleteUser(userId: number, userName: string) {
+    if (!window.confirm(`Tem a certeza que deseja remover permanentemente o utilizador "${userName}"?\n\nEsta acção é irreversível e apagará o registo do utilizador.`)) {
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, action: 'delete' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Erro ao remover utilizador.');
+        return;
+      }
+      setSuccess(`Utilizador "${userName}" removido permanentemente com sucesso.`);
+      startTransition(() => router.refresh());
+    } catch {
+      setError('Erro de rede ao remover utilizador.');
     }
   }
 
@@ -286,21 +312,35 @@ export function UsersManagement({
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          {item.id !== currentUserId && (
-                            <button
-                              type="button"
-                              disabled={isPending}
-                              onClick={() => handleToggleStatus(item.id, item.activo)}
-                              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
-                                item.activo
-                                  ? 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/50 border border-rose-200 dark:border-rose-900/50'
-                                  : 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/50'
-                              }`}
-                              title={item.activo ? 'Desactivar este utilizador' : 'Reactivar este utilizador'}
-                            >
-                              <UserXIcon size={13} />
-                              {item.activo ? 'Desactivar' : 'Reactivar'}
-                            </button>
+                          {item.id !== currentUserId ? (
+                            <div className="inline-flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                disabled={isPending}
+                                onClick={() => handleToggleStatus(item.id, item.activo)}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                                  item.activo
+                                    ? 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 border border-amber-200 dark:border-amber-900/50'
+                                    : 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/50'
+                                }`}
+                                title={item.activo ? 'Desactivar temporariamente este utilizador' : 'Reactivar este utilizador'}
+                              >
+                                <UserXIcon size={13} />
+                                {item.activo ? 'Desactivar' : 'Reactivar'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isPending}
+                                onClick={() => handleDeleteUser(item.id, item.nome)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition cursor-pointer text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/50 border border-rose-200 dark:border-rose-900/50"
+                                title="Remover permanentemente este utilizador do sistema"
+                              >
+                                <TrashIcon size={13} />
+                                Remover
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">Sessão actual</span>
                           )}
                         </td>
                       </tr>
