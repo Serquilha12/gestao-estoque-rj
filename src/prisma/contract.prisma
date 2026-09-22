@@ -1,0 +1,104 @@
+// use prisma-8
+
+enum Perfil {
+  ADMINISTRADOR
+  ATENDENTE
+}
+
+enum TipoMovimentoStock {
+  ENTRADA
+  SAIDA
+  AJUSTE
+}
+
+model Utilizador {
+  id             Int       @id @default(autoincrement())
+  nome           String
+  email          String    @unique
+  palavraPasse   String
+  perfil         Perfil
+  activo         Boolean   @default(true)
+  criadoEm       TimestamptzString @default(now())
+  actualizadoEm  temporal.updatedAtString()
+
+  vendas         Venda[]
+  movimentosStock MovimentoStock[]
+}
+
+model Categoria {
+  id             Int       @id @default(autoincrement())
+  nome           String    @unique
+  descricao      String?
+  activo         Boolean   @default(true)
+  criadoEm       TimestamptzString @default(now())
+  actualizadoEm  temporal.updatedAtString()
+
+  produtos       Produto[]
+}
+
+model Produto {
+  id             Int       @id @default(autoincrement())
+  codigo         String    @unique
+  nome           String
+  descricao      String?
+  categoriaId    Int
+  precoCompra    Decimal
+  precoVenda     Decimal
+  stockActual    Int       @default(0)
+  stockMinimo    Int       @default(0)
+  activo         Boolean   @default(true)
+  criadoEm       TimestamptzString @default(now())
+  actualizadoEm  temporal.updatedAtString()
+
+  categoria      Categoria @relation(fields: [categoriaId], references: [id])
+  itensVenda     ItemVenda[]
+  movimentosStock MovimentoStock[]
+}
+
+model Venda {
+  id             Int        @id @default(autoincrement())
+  utilizadorId   Int
+  total          Decimal
+  criadoEm       TimestamptzString @default(now())
+
+  utilizador     Utilizador @relation(fields: [utilizadorId], references: [id])
+  itens          ItemVenda[]
+
+  @@index([utilizadorId])
+  @@index([criadoEm])
+}
+
+model ItemVenda {
+  id             Int        @id @default(autoincrement())
+  vendaId        Int
+  produtoId      Int
+  quantidade     Int
+  precoUnitario  Decimal
+  subtotal       Decimal
+
+  venda          Venda      @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  produto        Produto    @relation(fields: [produtoId], references: [id])
+
+  @@index([vendaId])
+  @@index([produtoId])
+}
+
+model MovimentoStock {
+  id             Int                @id @default(autoincrement())
+  produtoId      Int
+  utilizadorId   Int
+  tipo           TipoMovimentoStock
+  quantidade     Int
+  stockAnterior  Int
+  stockPosterior Int
+  motivo         String?
+  criadoEm       TimestamptzString  @default(now())
+
+  produto        Produto            @relation(fields: [produtoId], references: [id])
+  utilizador     Utilizador         @relation(fields: [utilizadorId], references: [id])
+
+  @@index([produtoId])
+  @@index([utilizadorId])
+  @@index([tipo])
+  @@index([criadoEm])
+}
