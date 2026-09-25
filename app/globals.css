@@ -4,13 +4,13 @@
    ========================================================================== */
 
 @import "tailwindcss";
-
-@source "../src";
-
-@variant dark (&:where(.dark, .dark *));
-
 @import "../src/styles/tokens.css";
 @import "../src/styles/components.css";
+
+@source "../src";
+@source "../app";
+
+@variant dark (&:where(.dark, .dark *));
 
 
 /* Base Reset & Box Sizing */

@@ -100,7 +100,7 @@ export function AppSidebar({ user, onItemClick, className = '' }: AppSidebarProp
                   }`}
                 >
                   <span
-                    className={`shrink-0 transition-colors ${
+                    className={`shrink-0 flex items-center justify-center w-5 h-5 transition-colors ${
                       active
                         ? 'text-white dark:text-black'
                         : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-white'

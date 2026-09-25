@@ -86,6 +86,7 @@ export default function VendasPage() {
   const [reciboData, setReciboData] = useState<ReceiptData | null>(null);
   const [quebraModalAberto, setQuebraModalAberto] = useState(false);
   const [contagemModalAberto, setContagemModalAberto] = useState(false);
+  const [carrinhoDrawerAberto, setCarrinhoDrawerAberto] = useState(false);
 
   // Realtime clock
   const [horaAtual, setHoraAtual] = useState('');
@@ -352,469 +353,538 @@ export default function VendasPage() {
     }, 100);
   }
 
-  return (
-    <div className="flex flex-col xl:flex-row gap-6 items-start">
-      {/* ========================================================================= */}
-      {/* COLUNA CENTRAL: CATÁLOGO DE PRODUTOS (LAYOUT REF 2 - CORES REF 1)         */}
-      {/* ========================================================================= */}
-      <div className="flex-1 min-w-0 w-full space-y-6">
-        {/* Top Header / Quick Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-[#121824] border border-black/5 dark:border-white/10 px-3.5 py-1.5 text-xs font-semibold text-zinc-900 dark:text-zinc-100 shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Caixa Aberto
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-white dark:bg-[#121824] border border-black/5 dark:border-white/10 px-3 py-1.5 rounded-full shadow-2xs">
-              <ClockIcon size={13} className="text-zinc-500" />
-              {horaAtual || '00:00:00'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setQuebraModalAberto(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] px-4 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition shadow-2xs cursor-pointer"
-            >
-              <AlertTriangleIcon size={14} className="text-amber-500" />
-              <span>Registar Quebra</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setContagemModalAberto(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] px-4 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition shadow-2xs cursor-pointer"
-            >
-              <span>Contagem de Turno</span>
-            </button>
-
-            <Link
-              href="/app/vendas/historico"
-              className="inline-flex items-center gap-1.5 rounded-full border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] px-4 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition shadow-2xs"
-            >
-              <HistoryIcon size={14} />
-              <span>Histórico</span>
-            </Link>
-          </div>
+  const renderComanda = (isDrawer = false) => (
+    <div className={`flex flex-col h-full space-y-5 ${isDrawer ? 'p-5 sm:p-6' : 'p-6'}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between pb-3.5 border-b border-black/5 dark:border-white/5">
+        <div>
+          <h3 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            Comanda
+          </h3>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            {totalArtigos} {totalArtigos === 1 ? 'item adicionado' : 'itens adicionados'}
+          </p>
         </div>
 
-        {/* Search Bar (Ref 2 Style with Capsule Shape) */}
-        <div className="relative flex items-center">
-          <div className="absolute left-4.5 text-zinc-600 dark:text-zinc-400 pointer-events-none">
-            <SearchIcon size={18} />
-          </div>
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={pesquisa}
-            onChange={(e) => setPesquisa(e.target.value)}
-            placeholder="Pesquisar por código ou nome (pressione F2 para focar)..."
-            className="w-full pl-12 pr-28 py-3.5 rounded-full bg-white dark:bg-[#121824] border border-black/5 dark:border-white/10 text-zinc-900 dark:text-white text-sm placeholder:text-zinc-600 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white shadow-xs transition"
-            autoFocus
-          />
-          <div className="absolute right-3 flex items-center gap-1.5">
-            {pesquisa && (
-              <button
-                type="button"
-                onClick={() => {
-                  setPesquisa('');
-                  searchInputRef.current?.focus();
-                }}
-                className="p-1 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition"
-              >
-                <CloseIcon size={16} />
-              </button>
-            )}
-            <span className="hidden sm:inline-block px-2.5 py-1 text-[11px] font-bold text-zinc-600 dark:text-zinc-400 bg-[#F4F5F7] dark:bg-[#1A202C] rounded-full border border-black/5 dark:border-white/5">
-              F2
-            </span>
-          </div>
-        </div>
-
-        {/* Horizontal Category Chips (Ref 2 Layout + Ref 1 Colors) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setCategoriaAtiva(null)}
-            className={`whitespace-nowrap rounded-full px-5 py-2.5 text-xs font-semibold transition-all duration-150 shrink-0 cursor-pointer ${
-              categoriaAtiva === null
-                ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
-                : 'bg-white dark:bg-[#121824] text-zinc-600 dark:text-zinc-400 border border-black/5 dark:border-white/10 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
-            }`}
-          >
-            Todos os Produtos
-          </button>
-
-          {aCarregarCategorias ? (
-            <div className="flex gap-2">
-              <div className="h-9 w-24 rounded-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
-              <div className="h-9 w-28 rounded-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
-            </div>
-          ) : (
-            categorias.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategoriaAtiva(cat.id)}
-                className={`whitespace-nowrap rounded-full px-5 py-2.5 text-xs font-semibold transition-all duration-150 shrink-0 cursor-pointer ${
-                  categoriaAtiva === cat.id
-                    ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
-                    : 'bg-white dark:bg-[#121824] text-zinc-600 dark:text-zinc-400 border border-black/5 dark:border-white/10 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
-                }`}
-              >
-                {cat.nome}
-              </button>
-            ))
+        <div className="flex items-center gap-2">
+          {carrinho.length > 0 && (
+            <button
+              type="button"
+              onClick={limparCarrinho}
+              className="text-xs font-semibold text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
+            >
+              Limpar
+            </button>
+          )}
+          {isDrawer && (
+            <button
+              type="button"
+              onClick={() => setCarrinhoDrawerAberto(false)}
+              className="p-1 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition cursor-pointer"
+            >
+              <CloseIcon size={18} />
+            </button>
           )}
         </div>
+      </div>
 
-        {/* Section Title */}
-        <div className="flex items-center justify-between pt-2">
-          <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Cardápio & Produtos
-          </h2>
-          <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-            {produtos.length} {produtos.length === 1 ? 'produto encontrado' : 'produtos disponíveis'}
-          </span>
-        </div>
+      {/* Order Mode Switcher (Purr'Coffee Layout) */}
+      <div className="p-1 rounded-full bg-[#F4F5F7] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 flex gap-1">
+        {(['Balcão', 'Take Away', 'Mesa'] as OrderType[]).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setTipoPedido(mode)}
+            className={`flex-1 py-1.5 px-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              tipoPedido === mode
+                ? 'bg-black text-white dark:bg-white dark:text-black shadow-xs'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+            }`}
+          >
+            {mode}
+          </button>
+        ))}
+      </div>
 
-        {/* Error Notification */}
-        {mensagemErro && (
-          <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs font-medium flex justify-between items-center">
-            <span>{mensagemErro}</span>
-            <button type="button" onClick={() => setMensagemErro('')} className="p-1">
-              <CloseIcon size={14} />
-            </button>
-          </div>
-        )}
-
-        {/* Product Cards Grid (Ref 2 Layout + Ref 1 Aesthetics) */}
-        {aCarregarProdutos ? (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] p-5 space-y-4 animate-pulse"
-              >
-                <div className="h-28 rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
-                <div className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-700 rounded-md" />
-                <div className="h-4 w-1/3 bg-zinc-200 dark:bg-zinc-700 rounded-md" />
-              </div>
-            ))}
-          </div>
-        ) : produtos.length === 0 ? (
-          <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] p-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-[#F4F5F7] dark:bg-[#1A202C] text-zinc-400 flex items-center justify-center mx-auto mb-3">
-              <SearchIcon size={22} />
-            </div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-              Nenhum produto encontrado
-            </h3>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
-              {pesquisa
-                ? `Não foram encontrados produtos com "${pesquisa}".`
-                : 'Não existem produtos activos registados nesta categoria.'}
+      {/* Cart Items List */}
+      <div className="flex-1 space-y-3 max-h-[380px] xl:max-h-[420px] overflow-y-auto pr-1 scrollbar-none">
+        {carrinho.length === 0 ? (
+          <div className="py-12 text-center text-zinc-400 dark:text-zinc-500">
+            <span className="text-3xl block mb-2">🛒</span>
+            <p className="text-xs font-medium">Nenhum item selecionado</p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              Toque nos produtos ao lado para adicionar
             </p>
-            {(pesquisa || categoriaAtiva !== null) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setPesquisa('');
-                  setCategoriaAtiva(null);
-                }}
-                className="mt-4 px-4 py-2 rounded-full border border-black/10 dark:border-white/10 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition"
-              >
-                Limpar Filtros
-              </button>
-            )}
           </div>
         ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {produtos.map((produto) => {
-              const noCarrinho = carrinho.find((item) => item.id === produto.id);
-              const qtdNoCarrinho = noCarrinho?.quantidade ?? 0;
-              const esgotado = produto.stockActual <= 0;
-              const limiteAtingido = qtdNoCarrinho >= produto.stockActual;
-
-              return (
-                <div
-                  key={produto.id}
-                  className={`group rounded-3xl border p-5 transition-all duration-200 flex flex-col justify-between select-none ${
-                    esgotado
-                      ? 'border-black/5 dark:border-white/5 bg-zinc-100/60 dark:bg-zinc-900/40 opacity-50 cursor-not-allowed'
-                      : noCarrinho
-                      ? 'border-black/20 dark:border-white/30 bg-white dark:bg-[#121824] shadow-md ring-1 ring-black/10 dark:ring-white/10'
-                      : 'border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] hover:shadow-lg hover:border-black/10 dark:hover:border-white/20'
-                  }`}
-                >
-                  {/* Top: Placeholder Image or Category Thumbnail */}
-                  <div className="h-28 w-full rounded-2xl bg-[#F8F9FA] dark:bg-[#1A202C] flex items-center justify-center text-4xl mb-4 text-zinc-400 transition group-hover:scale-[1.02]">
-                    📦
+          carrinho.map((item) => {
+            const itemSubtotal = Number(item.precoVenda) * item.quantidade;
+            return (
+              <div
+                key={item.id}
+                className="p-3.5 rounded-2xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 space-y-2.5 transition"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">
+                      {item.nome}
+                    </p>
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                      {Number(item.precoVenda).toFixed(2)} MT / un.
+                    </p>
                   </div>
 
-                  {/* Body: Title & Price */}
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-bold text-zinc-900 dark:text-white line-clamp-1">
-                        {produto.nome}
-                      </h3>
-                      <span className="text-sm font-black text-zinc-900 dark:text-white whitespace-nowrap">
-                        {Number(produto.precoVenda).toFixed(2)} MT
-                      </span>
+                  <button
+                    type="button"
+                    onClick={() => removerDoCarrinho(item.id)}
+                    className="text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 transition cursor-pointer"
+                    title="Remover"
+                  >
+                    <TrashIcon size={14} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  {/* Stepper */}
+                  <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-800 rounded-full p-0.5 border border-black/5 dark:border-white/10 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (item.quantidade <= 1) {
+                          removerDoCarrinho(item.id);
+                        } else {
+                          alterarQuantidade(item.id, item.quantidade - 1);
+                        }
+                      }}
+                      className="w-5 h-5 rounded-full text-zinc-700 dark:text-zinc-300 flex items-center justify-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition text-[10px] font-bold cursor-pointer"
+                    >
+                      <MinusIcon size={10} />
+                    </button>
+                    <span className="w-5 text-center text-xs font-bold text-zinc-900 dark:text-white">
+                      {item.quantidade}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={item.quantidade >= item.stockActual}
+                      onClick={() => alterarQuantidade(item.id, item.quantidade + 1)}
+                      className="w-5 h-5 rounded-full text-zinc-700 dark:text-zinc-300 flex items-center justify-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black disabled:opacity-30 transition text-[10px] font-bold cursor-pointer"
+                    >
+                      <PlusIcon size={10} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleNotas(item.id)}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition cursor-pointer ${
+                        item.notas
+                          ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200'
+                          : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                      }`}
+                    >
+                      {item.notas ? 'Obs ✓' : '+ Obs'}
+                    </button>
+                    <span className="text-xs font-black text-zinc-900 dark:text-white">
+                      {itemSubtotal.toFixed(2)} MT
+                    </span>
+                  </div>
+                </div>
+
+                {/* Note Input */}
+                {item.mostrandoNotas && (
+                  <div className="pt-1">
+                    <input
+                      type="text"
+                      value={item.notas ?? ''}
+                      onChange={(e) => atualizarNota(item.id, e.target.value)}
+                      placeholder="Ex: sem açúcar, bem passado..."
+                      className="w-full text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-zinc-800 px-3 py-1.5 text-zinc-900 dark:text-white outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                      autoFocus
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Financial Summary */}
+      <div className="pt-3 border-t border-black/5 dark:border-white/5 space-y-1.5">
+        <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+          <span>Artigos Selecionados</span>
+          <span className="font-semibold text-zinc-900 dark:text-white">{totalArtigos} unid.</span>
+        </div>
+        <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+          <span>Modalidade</span>
+          <span className="font-semibold text-zinc-900 dark:text-white">{tipoPedido}</span>
+        </div>
+
+        <div className="flex justify-between items-baseline pt-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+            Total a Pagar
+          </span>
+          <span className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
+            {totalValor.toFixed(2)} <span className="text-xs font-bold">MT</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Action Button */}
+      <button
+        type="button"
+        disabled={carrinho.length === 0 || aProcessar}
+        onClick={() => {
+          if (isDrawer) setCarrinhoDrawerAberto(false);
+          abrirCheckout();
+        }}
+        className="w-full py-3.5 rounded-2xl bg-black dark:bg-white text-white dark:text-black hover:opacity-90 active:scale-[0.98] font-bold text-sm tracking-wide shadow-md transition disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2"
+      >
+        <span>Finalizar Venda</span>
+        <span className="text-xs opacity-60 font-normal">[F4]</span>
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="relative pb-24 xl:pb-0">
+      <div className="flex flex-col xl:flex-row gap-6 items-start">
+        {/* ========================================================================= */}
+        {/* COLUNA CENTRAL: CATÁLOGO DE PRODUTOS                                      */}
+        {/* ========================================================================= */}
+        <div className="flex-1 min-w-0 w-full space-y-6">
+          {/* Top Header / Quick Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-[#121824] border border-black/5 dark:border-white/10 px-3.5 py-1.5 text-xs font-semibold text-zinc-900 dark:text-zinc-100 shadow-2xs">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Caixa Aberto
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-white dark:bg-[#121824] border border-black/5 dark:border-white/10 px-3 py-1.5 rounded-full shadow-2xs">
+                <ClockIcon size={13} className="text-zinc-500" />
+                {horaAtual || '00:00:00'}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setQuebraModalAberto(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] px-3.5 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition shadow-2xs cursor-pointer"
+              >
+                <AlertTriangleIcon size={13} className="text-amber-500" />
+                <span>Registar Quebra</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setContagemModalAberto(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] px-3.5 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition shadow-2xs cursor-pointer"
+              >
+                <span>Contagem de Turno</span>
+              </button>
+
+              <Link
+                href="/app/vendas/historico"
+                className="inline-flex items-center gap-1.5 rounded-full border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] px-3.5 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition shadow-2xs"
+              >
+                <HistoryIcon size={13} />
+                <span>Histórico</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative flex items-center">
+            <div className="absolute left-4.5 text-zinc-600 dark:text-zinc-400 pointer-events-none">
+              <SearchIcon size={18} />
+            </div>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={pesquisa}
+              onChange={(e) => setPesquisa(e.target.value)}
+              placeholder="Pesquisar por código ou nome (pressione F2 para focar)..."
+              className="w-full pl-12 pr-28 py-3.5 rounded-full bg-white dark:bg-[#121824] border border-black/5 dark:border-white/10 text-zinc-900 dark:text-white text-sm placeholder:text-zinc-600 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white shadow-xs transition"
+              autoFocus
+            />
+            <div className="absolute right-3 flex items-center gap-1.5">
+              {pesquisa && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPesquisa('');
+                    searchInputRef.current?.focus();
+                  }}
+                  className="p-1 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition cursor-pointer"
+                >
+                  <CloseIcon size={16} />
+                </button>
+              )}
+              <span className="hidden sm:inline-block px-2.5 py-1 text-[11px] font-bold text-zinc-600 dark:text-zinc-400 bg-[#F4F5F7] dark:bg-[#1A202C] rounded-full border border-black/5 dark:border-white/5">
+                F2
+              </span>
+            </div>
+          </div>
+
+          {/* Horizontal Category Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setCategoriaAtiva(null)}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition-all duration-150 shrink-0 cursor-pointer ${
+                categoriaAtiva === null
+                  ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
+                  : 'bg-white dark:bg-[#121824] text-zinc-600 dark:text-zinc-400 border border-black/5 dark:border-white/10 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
+              }`}
+            >
+              Todos os Produtos
+            </button>
+
+            {aCarregarCategorias ? (
+              <div className="flex gap-2">
+                <div className="h-8 w-20 rounded-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                <div className="h-8 w-24 rounded-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+              </div>
+            ) : (
+              categorias.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCategoriaAtiva(cat.id)}
+                  className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition-all duration-150 shrink-0 cursor-pointer ${
+                    categoriaAtiva === cat.id
+                      ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
+                      : 'bg-white dark:bg-[#121824] text-zinc-600 dark:text-zinc-400 border border-black/5 dark:border-white/10 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
+                  }`}
+                >
+                  {cat.nome}
+                </button>
+              ))
+            )}
+          </div>
+
+          {/* Section Title */}
+          <div className="flex items-center justify-between pt-1">
+            <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              Cardápio & Produtos
+            </h2>
+            <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+              {produtos.length} {produtos.length === 1 ? 'produto' : 'produtos'}
+            </span>
+          </div>
+
+          {/* Error Notification */}
+          {mensagemErro && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs font-medium flex justify-between items-center">
+              <span>{mensagemErro}</span>
+              <button type="button" onClick={() => setMensagemErro('')} className="p-1">
+                <CloseIcon size={14} />
+              </button>
+            </div>
+          )}
+
+          {/* Product Cards Grid: Mobile 1-2 cols, Tablet 2-3 cols, Desktop 3-4 cols */}
+          {aCarregarProdutos ? (
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] p-5 space-y-4 animate-pulse"
+                >
+                  <div className="h-28 rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
+                  <div className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-700 rounded-md" />
+                  <div className="h-4 w-1/3 bg-zinc-200 dark:bg-zinc-700 rounded-md" />
+                </div>
+              ))}
+            </div>
+          ) : produtos.length === 0 ? (
+            <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] p-12 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#F4F5F7] dark:bg-[#1A202C] text-zinc-400 flex items-center justify-center mx-auto mb-3">
+                <SearchIcon size={22} />
+              </div>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+                Nenhum produto encontrado
+              </h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+                {pesquisa
+                  ? `Não foram encontrados produtos com "${pesquisa}".`
+                  : 'Não existem produtos activos registados nesta categoria.'}
+              </p>
+              {(pesquisa || categoriaAtiva !== null) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPesquisa('');
+                    setCategoriaAtiva(null);
+                  }}
+                  className="mt-4 px-4 py-2 rounded-full border border-black/10 dark:border-white/10 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition"
+                >
+                  Limpar Filtros
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {produtos.map((produto) => {
+                const noCarrinho = carrinho.find((item) => item.id === produto.id);
+                const qtdNoCarrinho = noCarrinho?.quantidade ?? 0;
+                const esgotado = produto.stockActual <= 0;
+                const limiteAtingido = qtdNoCarrinho >= produto.stockActual;
+
+                return (
+                  <div
+                    key={produto.id}
+                    className={`group rounded-3xl border p-4 sm:p-5 transition-all duration-200 flex flex-col justify-between select-none ${
+                      esgotado
+                        ? 'border-black/5 dark:border-white/5 bg-zinc-100/60 dark:bg-zinc-900/40 opacity-50 cursor-not-allowed'
+                        : noCarrinho
+                        ? 'border-black/20 dark:border-white/30 bg-white dark:bg-[#121824] shadow-md ring-1 ring-black/10 dark:ring-white/10'
+                        : 'border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] hover:shadow-lg hover:border-black/10 dark:hover:border-white/20'
+                    }`}
+                  >
+                    {/* Top: Thumbnail */}
+                    <div className="h-24 sm:h-28 w-full rounded-2xl bg-[#F8F9FA] dark:bg-[#1A202C] flex items-center justify-center text-3xl sm:text-4xl mb-3 text-zinc-400 transition group-hover:scale-[1.02]">
+                      📦
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between text-xs">
-                      <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium">
-                        Cód: {produto.codigo}
-                      </span>
-                      {esgotado ? (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                          Esgotado
+                    {/* Body: Title & Price */}
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white line-clamp-1">
+                          {produto.nome}
+                        </h3>
+                        <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white whitespace-nowrap">
+                          {Number(produto.precoVenda).toFixed(2)} MT
                         </span>
+                      </div>
+
+                      <div className="mt-1.5 flex items-center justify-between text-xs">
+                        <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium">
+                          Cód: {produto.codigo}
+                        </span>
+                        {esgotado ? (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                            Esgotado
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
+                            {produto.stockActual} unid.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action / Stepper */}
+                    <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2">
+                      {noCarrinho ? (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-1 bg-[#F4F5F7] dark:bg-[#1A202C] rounded-full p-1 border border-black/5 dark:border-white/5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (noCarrinho.quantidade <= 1) {
+                                  removerDoCarrinho(produto.id);
+                                } else {
+                                  alterarQuantidade(produto.id, noCarrinho.quantidade - 1);
+                                }
+                              }}
+                              className="w-6 h-6 rounded-full bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition text-xs font-bold cursor-pointer"
+                            >
+                              <MinusIcon size={12} />
+                            </button>
+                            <span className="w-6 text-center text-xs font-bold text-zinc-900 dark:text-white">
+                              {noCarrinho.quantidade}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={limiteAtingido}
+                              onClick={() => alterarQuantidade(produto.id, noCarrinho.quantidade + 1)}
+                              className="w-6 h-6 rounded-full bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black disabled:opacity-30 transition text-xs font-bold cursor-pointer"
+                            >
+                              <PlusIcon size={12} />
+                            </button>
+                          </div>
+
+                          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                            No Pedido
+                          </span>
+                        </div>
                       ) : (
-                        <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
-                          {produto.stockActual} unid.
-                        </span>
+                        <button
+                          type="button"
+                          disabled={esgotado}
+                          onClick={() => adicionarAoCarrinho(produto)}
+                          className="w-full py-2 px-3 rounded-full bg-black dark:bg-white text-white dark:text-black hover:opacity-90 font-semibold text-xs tracking-wide transition shadow-xs disabled:opacity-40 cursor-pointer"
+                        >
+                          {esgotado ? 'Indisponível' : 'Adicionar'}
+                        </button>
                       )}
                     </div>
                   </div>
-
-                  {/* Action / Stepper */}
-                  <div className="mt-5 pt-3.5 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2">
-                    {noCarrinho ? (
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-1 bg-[#F4F5F7] dark:bg-[#1A202C] rounded-full p-1 border border-black/5 dark:border-white/5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (noCarrinho.quantidade <= 1) {
-                                removerDoCarrinho(produto.id);
-                              } else {
-                                alterarQuantidade(produto.id, noCarrinho.quantidade - 1);
-                              }
-                            }}
-                            className="w-6 h-6 rounded-full bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition text-xs font-bold cursor-pointer"
-                          >
-                            <MinusIcon size={12} />
-                          </button>
-                          <span className="w-6 text-center text-xs font-bold text-zinc-900 dark:text-white">
-                            {noCarrinho.quantidade}
-                          </span>
-                          <button
-                            type="button"
-                            disabled={limiteAtingido}
-                            onClick={() => alterarQuantidade(produto.id, noCarrinho.quantidade + 1)}
-                            className="w-6 h-6 rounded-full bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black disabled:opacity-30 transition text-xs font-bold cursor-pointer"
-                          >
-                            <PlusIcon size={12} />
-                          </button>
-                        </div>
-
-                        <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                          No Pedido
-                        </span>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={esgotado}
-                        onClick={() => adicionarAoCarrinho(produto)}
-                        className="w-full py-2.5 px-4 rounded-full bg-black dark:bg-white text-white dark:text-black hover:opacity-90 font-semibold text-xs tracking-wide transition shadow-xs disabled:opacity-40 cursor-pointer"
-                      >
-                        {esgotado ? 'Indisponível' : 'Adicionar'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ========================================================================= */}
-      {/* COLUNA LATERAL: CARRINHO / TICKET (LAYOUT REF 2 - PURR'COFFEE)             */}
-      {/* ========================================================================= */}
-      <div className="w-full xl:w-96 shrink-0">
-        <div className="sticky top-20 rounded-3xl bg-white dark:bg-[#121824] border border-black/5 dark:border-white/10 p-6 shadow-sm space-y-6 transition-colors duration-200">
-          {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-black/5 dark:border-white/5">
-            <div>
-              <h3 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                Comanda
-              </h3>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                {totalArtigos} {totalArtigos === 1 ? 'item adicionado' : 'itens adicionados'}
-              </p>
-            </div>
-
-            {carrinho.length > 0 && (
-              <button
-                type="button"
-                onClick={limparCarrinho}
-                className="text-xs font-semibold text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
-              >
-                Limpar
-              </button>
-            )}
-          </div>
-
-          {/* Order Mode Switcher (Purr'Coffee Layout) */}
-          <div className="p-1 rounded-full bg-[#F4F5F7] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 flex gap-1">
-            {(['Balcão', 'Take Away', 'Mesa'] as OrderType[]).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setTipoPedido(mode)}
-                className={`flex-1 py-1.5 px-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                  tipoPedido === mode
-                    ? 'bg-black text-white dark:bg-white dark:text-black shadow-xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-
-          {/* Cart Items List */}
-          <div className="space-y-3.5 max-h-[380px] overflow-y-auto pr-1 scrollbar-none">
-            {carrinho.length === 0 ? (
-              <div className="py-12 text-center text-zinc-400 dark:text-zinc-500">
-                <span className="text-3xl block mb-2">🛒</span>
-                <p className="text-xs font-medium">Nenhum item selecionado</p>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
-                  Clique nos produtos ao lado para adicionar
-                </p>
-              </div>
-            ) : (
-              carrinho.map((item) => {
-                const itemSubtotal = Number(item.precoVenda) * item.quantidade;
-                return (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-2xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 space-y-2.5 transition"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">
-                          {item.nome}
-                        </p>
-                        <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
-                          {Number(item.precoVenda).toFixed(2)} MT / un.
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removerDoCarrinho(item.id)}
-                        className="text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 transition cursor-pointer"
-                        title="Remover"
-                      >
-                        <TrashIcon size={14} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      {/* Stepper */}
-                      <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-800 rounded-full p-0.5 border border-black/5 dark:border-white/10 shadow-2xs">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (item.quantidade <= 1) {
-                              removerDoCarrinho(item.id);
-                            } else {
-                              alterarQuantidade(item.id, item.quantidade - 1);
-                            }
-                          }}
-                          className="w-5 h-5 rounded-full text-zinc-700 dark:text-zinc-300 flex items-center justify-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition text-[10px] font-bold cursor-pointer"
-                        >
-                          <MinusIcon size={10} />
-                        </button>
-                        <span className="w-5 text-center text-xs font-bold text-zinc-900 dark:text-white">
-                          {item.quantidade}
-                        </span>
-                        <button
-                          type="button"
-                          disabled={item.quantidade >= item.stockActual}
-                          onClick={() => alterarQuantidade(item.id, item.quantidade + 1)}
-                          className="w-5 h-5 rounded-full text-zinc-700 dark:text-zinc-300 flex items-center justify-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black disabled:opacity-30 transition text-[10px] font-bold cursor-pointer"
-                        >
-                          <PlusIcon size={10} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => toggleNotas(item.id)}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition cursor-pointer ${
-                            item.notas
-                              ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200'
-                              : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-                          }`}
-                        >
-                          {item.notas ? 'Obs ✓' : '+ Obs'}
-                        </button>
-                        <span className="text-xs font-black text-zinc-900 dark:text-white">
-                          {itemSubtotal.toFixed(2)} MT
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Note Input */}
-                    {item.mostrandoNotas && (
-                      <div className="pt-1">
-                        <input
-                          type="text"
-                          value={item.notas ?? ''}
-                          onChange={(e) => atualizarNota(item.id, e.target.value)}
-                          placeholder="Ex: sem açúcar, bem passado..."
-                          className="w-full text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-zinc-800 px-3 py-1.5 text-zinc-900 dark:text-white outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
-                          autoFocus
-                        />
-                      </div>
-                    )}
-                  </div>
                 );
-              })
-            )}
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ========================================================================= */}
+        {/* COLUNA LATERAL: COMANDA DESKTOP (STICKY)                                  */}
+        {/* ========================================================================= */}
+        <div className="hidden xl:block w-96 shrink-0">
+          <div className="sticky top-20 rounded-3xl bg-white dark:bg-[#121824] border border-black/5 dark:border-white/10 shadow-sm transition-colors duration-200">
+            {renderComanda(false)}
           </div>
-
-          {/* Financial Summary */}
-          <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-2">
-            <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
-              <span>Artigos Selecionados</span>
-              <span className="font-semibold text-zinc-900 dark:text-white">{totalArtigos} unid.</span>
-            </div>
-            <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
-              <span>Modalidade</span>
-              <span className="font-semibold text-zinc-900 dark:text-white">{tipoPedido}</span>
-            </div>
-
-            <div className="flex justify-between items-baseline pt-2">
-              <span className="text-sm font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-                Total a Pagar
-              </span>
-              <span className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
-                {totalValor.toFixed(2)} <span className="text-xs font-bold">MT</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Large Action Button (Ref 2 Purr'Coffee + Ref 1 Black Capsule) */}
-          <button
-            type="button"
-            disabled={carrinho.length === 0 || aProcessar}
-            onClick={abrirCheckout}
-            className="w-full py-4 rounded-2xl bg-black dark:bg-white text-white dark:text-black hover:opacity-90 active:scale-[0.98] font-bold text-sm tracking-wide shadow-md transition disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2"
-          >
-            <span>Finalizar Venda</span>
-            <span className="text-xs opacity-60 font-normal">[F4]</span>
-          </button>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* BARRA FLUTUANTE INFERIOR (MOBILE / TABLET < 1280px)                       */}
+      {/* ========================================================================= */}
+      <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#121824]/95 border-t border-black/10 dark:border-white/10 p-3 sm:p-4 backdrop-blur-md shadow-2xl xl:hidden flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setCarrinhoDrawerAberto(true)}
+          className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-black dark:bg-white text-white dark:text-black font-bold text-sm shadow-xs">
+            {totalArtigos}
+          </span>
+          <div className="min-w-0">
+            <span className="block text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Comanda ({tipoPedido})
+            </span>
+            <span className="block text-base font-black text-zinc-900 dark:text-white truncate">
+              {totalValor.toFixed(2)} MT
+            </span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          disabled={carrinho.length === 0}
+          onClick={abrirCheckout}
+          className="px-6 py-3 rounded-full bg-black dark:bg-white text-white dark:text-black font-bold text-xs tracking-wide shadow-md disabled:opacity-40 shrink-0 cursor-pointer hover:opacity-90 active:scale-95 transition"
+        >
+          Finalizar Venda
+        </button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* DRAWER / SLIDE-OVER DA COMANDA (MOBILE / TABLET)                          */}
+      {/* ========================================================================= */}
+      {carrinhoDrawerAberto && (
+        <div className="fixed inset-0 z-50 xl:hidden flex animate-in fade-in duration-150">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setCarrinhoDrawerAberto(false)}
+          />
+          <div className="relative ml-auto flex w-full max-w-md flex-1 flex-col bg-white dark:bg-[#121824] shadow-2xl animate-in slide-in-from-right duration-200 h-full overflow-hidden">
+            {renderComanda(true)}
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* MODAIS: CHECKOUT, RECIBO, QUEBRA E CONTAGEM CEGA                          */}
