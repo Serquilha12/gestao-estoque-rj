@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 
-import { createSessionToken, requireAuth, setSessionCookieServer } from '@/src/lib/auth';
+import { createSessionToken, requireAuth, setSessionCookieServer, SESSION_COOKIE } from '@/src/lib/auth';
 import { db } from '@/src/prisma/db';
 import { supabaseAdmin } from '@/src/lib/supabase/admin';
 import { verifyPassword } from '@/src/lib/password';
@@ -92,11 +92,18 @@ export async function loginAction(
 }
 
 export async function logoutAction() {
-  const user = await requireAuth('/login');
-
-  if (user) {
+  try {
     const cookieStore = await import('next/headers').then(({ cookies }) => cookies());
-    cookieStore.delete('tk_vendas_session');
+    cookieStore.delete(SESSION_COOKIE);
+    cookieStore.set(SESSION_COOKIE, '', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 0,
+    });
+  } catch (err) {
+    console.error('Erro ao terminar sessão:', err);
   }
 
   redirect('/login');
