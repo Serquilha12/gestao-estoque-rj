@@ -21,11 +21,11 @@ export function DashboardLayout({ user, children }: DashboardLayoutProps) {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#090D14] text-zinc-900 dark:text-zinc-100 flex flex-col transition-colors duration-200">
-        {/* 1. Desktop Fixed Vertical Sidebar */}
-        <div className="hidden md:fixed md:inset-y-0 md:left-0 md:z-40 md:flex md:w-64 md:flex-col">
+      <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#090D14] text-zinc-900 dark:text-zinc-100 flex transition-colors duration-200">
+        {/* 1. Desktop Sticky Vertical Sidebar */}
+        <aside className="hidden md:flex w-64 shrink-0 flex-col sticky top-0 h-screen z-30">
           <AppSidebar user={user} className="w-64 h-full" />
-        </div>
+        </aside>
 
         {/* 2. Mobile Drawer / Off-Canvas Sidebar */}
         {mobileMenuOpen && (
@@ -60,14 +60,14 @@ export function DashboardLayout({ user, children }: DashboardLayoutProps) {
         )}
 
         {/* 3. Main Application Content Area (Right Side) */}
-        <div className="md:pl-64 flex flex-1 flex-col min-w-0">
+        <div className="flex flex-1 flex-col min-w-0">
           <AppHeader
             user={user}
             onOpenMobileMenu={() => setMobileMenuOpen(true)}
           />
-          <main className="flex-1 w-full p-4 sm:p-6 lg:p-8">
+          <div className="flex-1 w-full">
             {children}
-          </main>
+          </div>
         </div>
       </div>
     </ToastProvider>

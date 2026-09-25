@@ -61,7 +61,7 @@ export function AppSidebar({ user, onItemClick, className = '' }: AppSidebarProp
   };
 
   return (
-    <aside
+    <div
       className={`flex h-full flex-col justify-between bg-white dark:bg-[#121824] text-zinc-900 dark:text-zinc-100 border-r border-black/5 dark:border-white/5 select-none transition-colors duration-200 ${className}`}
     >
       <div>
@@ -154,6 +154,6 @@ export function AppSidebar({ user, onItemClick, className = '' }: AppSidebarProp
           </form>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }
