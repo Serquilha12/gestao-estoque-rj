@@ -94,18 +94,18 @@ function CheckoutDialog({
   ].filter((v, i, arr) => v >= total && arr.indexOf(v) === i).slice(0, 4);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 p-3 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-3xl border border-neutral-200/80 bg-white dark:border-neutral-800 dark:bg-[#121824] p-6 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800/80 pb-4">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
               <ReceiptIcon size={20} />
             </span>
             <div>
-              <h2 className="text-lg font-black tracking-tight text-slate-900">Finalizar Venda</h2>
-              <p className="text-xs text-slate-500">
-                {quantidadeItens} {quantidadeItens === 1 ? 'artigo' : 'artigos'} no carrinho
+              <h2 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">Finalizar Venda</h2>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                {quantidadeItens} {quantidadeItens === 1 ? 'artigo' : 'artigos'} no pedido
               </p>
             </div>
           </div>
@@ -113,7 +113,7 @@ function CheckoutDialog({
             type="button"
             onClick={onClose}
             disabled={isProcessing}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-white transition"
           >
             <CloseIcon size={18} />
           </button>
@@ -121,15 +121,15 @@ function CheckoutDialog({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-5">
           {/* Total Display */}
-          <div className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-50/50 p-4">
+          <div className="flex items-center justify-between rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/60 p-4">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-800">Total a Cobrar</p>
-              <p className="text-2xl sm:text-3xl font-black text-emerald-700">
-                {total.toFixed(2)} <span className="text-sm font-bold">MT</span>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">Total a Cobrar</p>
+              <p className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white">
+                {total.toFixed(2)} <span className="text-sm font-bold text-neutral-500">MT</span>
               </p>
             </div>
             <div className="text-right">
-              <span className="inline-flex rounded-lg bg-emerald-100/80 px-2.5 py-1 text-xs font-bold text-emerald-800">
+              <span className="inline-flex rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 px-3 py-1 text-xs font-bold shadow-xs">
                 Pronto para Fecho
               </span>
             </div>
@@ -137,7 +137,7 @@ function CheckoutDialog({
 
           {/* Payment Method Selector */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">
               Forma de Pagamento
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -156,11 +156,11 @@ function CheckoutDialog({
                     onClick={() => setMetodo(item.id)}
                     className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all duration-150 ${
                       active
-                        ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm shadow-emerald-950/20'
-                        : 'border-slate-200 bg-slate-50/70 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                        ? 'border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-950 shadow-xs'
+                        : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                     }`}
                   >
-                    <span className={active ? 'text-white' : 'text-slate-500'}>{item.icon}</span>
+                    <span className={active ? 'text-inherit' : 'text-neutral-400'}>{item.icon}</span>
                     <span>{item.label}</span>
                   </button>
                 );
@@ -170,7 +170,7 @@ function CheckoutDialog({
 
           {/* Conditional Content by Method */}
           {metodo === 'DINHEIRO' ? (
-            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="space-y-3 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 p-4">
               <FormField label="Valor entregue pelo cliente (MT)" id="valorRecebido" required>
                 <Input
                   id="valorRecebido"
@@ -180,20 +180,20 @@ function CheckoutDialog({
                   value={valorRecebido}
                   onChange={(e) => setValorRecebido(e.target.value)}
                   placeholder="0.00"
-                  className="font-bold text-base text-slate-900 bg-white"
+                  className="font-bold text-base text-neutral-900 dark:text-white bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700"
                   autoFocus
                 />
               </FormField>
 
               {/* Quick Cash Buttons */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] font-semibold text-slate-500 mr-1">Sugestões:</span>
+                <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mr-1">Sugestões:</span>
                 {cashSuggestions.map((sug) => (
                   <button
                     key={sug}
                     type="button"
                     onClick={() => handleQuickCash(sug)}
-                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:border-emerald-500 hover:text-emerald-700 transition"
+                    className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2.5 py-1 text-[11px] font-bold text-neutral-700 dark:text-neutral-300 hover:border-neutral-900 dark:hover:border-white transition"
                   >
                     {sug === total ? 'Exato' : `${sug} MT`}
                   </button>
@@ -201,21 +201,21 @@ function CheckoutDialog({
               </div>
 
               {/* Change / Troco Indicator */}
-              <div className="mt-3 pt-3 border-t border-slate-200/80">
+              <div className="mt-3 pt-3 border-t border-neutral-200/80 dark:border-neutral-800">
                 {valorInsuficiente ? (
-                  <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-800 font-bold">
-                    <AlertTriangleIcon size={16} className="text-amber-600 shrink-0" />
+                  <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs text-amber-600 dark:text-amber-400 font-bold">
+                    <AlertTriangleIcon size={16} className="shrink-0" />
                     <span>Faltam {(total - numValorRecebido).toFixed(2)} MT para cobrir o total.</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between rounded-xl bg-emerald-100/70 border border-emerald-200/60 p-3">
+                  <div className="flex items-center justify-between rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 p-3">
                     <div className="flex items-center gap-2">
-                      <CheckCircleIcon size={18} className="text-emerald-700" />
-                      <span className="text-xs font-extrabold uppercase tracking-wide text-emerald-900">
+                      <CheckCircleIcon size={18} className="text-white dark:text-neutral-950" />
+                      <span className="text-xs font-bold uppercase tracking-wide">
                         Troco a Devolver:
                       </span>
                     </div>
-                    <span className="text-xl font-black text-emerald-800">
+                    <span className="text-xl font-black">
                       {troco.toFixed(2)} MT
                     </span>
                   </div>
@@ -223,7 +223,7 @@ function CheckoutDialog({
               </div>
             </div>
           ) : (
-            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="space-y-3 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 p-4">
               <FormField
                 label={
                   metodo === 'MPESA' || metodo === 'EMOLA'
@@ -238,10 +238,10 @@ function CheckoutDialog({
                   value={referencia}
                   onChange={(e) => setReferencia(e.target.value)}
                   placeholder="Ex: 8A47X90KP..."
-                  className="bg-white text-xs"
+                  className="bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white"
                 />
               </FormField>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                 Registo manual de controlo financeiro. O valor total de {total.toFixed(2)} MT será atribuído a {metodo}.
               </p>
             </div>
@@ -255,19 +255,19 @@ function CheckoutDialog({
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               placeholder="Ex: Para levar, sem picante, mesa balcão..."
-              className="text-xs"
+              className="text-xs bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white"
             />
           </FormField>
 
           {/* Buttons */}
-          <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
+          <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-100 dark:border-neutral-800">
             <Button
               type="button"
               variant="outline"
               size="md"
               disabled={isProcessing}
               onClick={onClose}
-              className="text-xs font-bold"
+              className="text-xs font-bold border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
             >
               Cancelar (ESC)
             </Button>
@@ -278,7 +278,7 @@ function CheckoutDialog({
               size="md"
               disabled={valorInsuficiente || isProcessing}
               isLoading={isProcessing}
-              className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-950/20"
+              className="text-xs font-bold bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-200 shadow-sm"
               rightIcon={<ArrowRightIcon size={16} />}
             >
               {isProcessing ? 'A Processar...' : `Confirmar Venda (${total.toFixed(2)} MT)`}

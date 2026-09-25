@@ -9,15 +9,7 @@ import { verifyPassword } from '@/src/lib/password';
 import { loginSchema } from '@/src/lib/validators';
 
 async function findUserByEmail(email: string) {
-  // 1. Tenta consulta direta via Prisma ORM
-  try {
-    const user = await db.orm.public.Utilizador.where({ email }).first();
-    if (user) return user;
-  } catch {
-    // Falha silenciosa para fallback
-  }
-
-  // 2. Fallback resiliente via Supabase REST (funciona em qualquer rede IPv4/IPv6)
+  // 1. Tenta consulta via Supabase REST (instantâneo via HTTPS)
   try {
     const { data } = await supabaseAdmin
       .from('Utilizador')
@@ -35,6 +27,14 @@ async function findUserByEmail(email: string) {
         activo: Boolean(data.activo),
       };
     }
+  } catch {
+    // Falha silenciosa para fallback
+  }
+
+  // 2. Consulta direta via Prisma ORM
+  try {
+    const user = await db.orm.public.Utilizador.where({ email }).first();
+    if (user) return user;
   } catch {
     // Falha silenciosa
   }

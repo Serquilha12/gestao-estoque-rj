@@ -3,9 +3,13 @@
    Tokens, Componentes, Utilitários e Otimizações de Impressão Térmica
    ========================================================================== */
 
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
 @import "../src/styles/tokens.css";
 @import "../src/styles/components.css";
-@import "../src/styles/utilities.css";
+
 
 /* Base Reset & Box Sizing */
 *,

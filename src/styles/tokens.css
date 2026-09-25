@@ -71,12 +71,12 @@
   --indigo-600: #4f46e5;
   --indigo-700: #4338ca;
 
-  /* Base Application Variables */
-  --background: var(--slate-50);
-  --foreground: var(--slate-900);
+  /* Base Application Variables (Jobgio Palette) */
+  --background: #F4F5F7;
+  --foreground: #090D14;
   --surface: #ffffff;
-  --surface-muted: var(--slate-100);
-  --border-color: var(--slate-200);
+  --surface-muted: #e5e7eb;
+  --border-color: #e5e7eb;
 
   /* Elevation Shadows */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
@@ -110,4 +110,12 @@
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark {
+  --background: #090D14;
+  --foreground: #F4F5F7;
+  --surface: #121824;
+  --surface-muted: #1A202C;
+  --border-color: #27272a;
 }

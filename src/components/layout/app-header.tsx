@@ -2,8 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { MenuIcon, PlusIcon, LogoutIcon, UserIcon } from '@/src/components/ui/icons';
-import { Badge } from '@/src/components/ui/badge';
+import { MenuIcon, PlusIcon, LogoutIcon } from '@/src/components/ui/icons';
+import { ThemeToggle } from '@/src/components/theme-provider';
 
 export interface AppHeaderProps {
   user: {
@@ -16,64 +16,61 @@ export interface AppHeaderProps {
 }
 
 export function AppHeader({ user, onOpenMobileMenu }: AppHeaderProps) {
-  const isAdmin = user.perfil === 'ADMINISTRADOR';
-
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 sm:px-6 lg:px-8 backdrop-blur-md">
-      {/* Left Area: Mobile Toggle & App Context */}
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-black/5 dark:border-white/5 bg-white/80 dark:bg-[#121824]/80 px-4 sm:px-6 lg:px-8 backdrop-blur-md transition-colors duration-200">
+      {/* Left: Mobile Toggle & Context */}
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onOpenMobileMenu}
-          className="md:hidden inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100 transition shadow-2xs"
+          className="md:hidden inline-flex items-center justify-center rounded-full border border-black/5 dark:border-white/10 bg-white dark:bg-zinc-900 p-2 text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition"
           aria-label="Abrir menu de navegação"
         >
-          <MenuIcon size={20} />
+          <MenuIcon size={18} />
         </button>
 
-        <div className="hidden sm:flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
-            Take Away
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-zinc-900 dark:text-white">
+            Take Away Rui Júnior
           </span>
-          <span className="text-xs font-semibold text-slate-500">• Rui Junior Vendas</span>
+          <span className="text-zinc-300 dark:text-zinc-700">•</span>
+          <span className="text-xs text-zinc-600 dark:text-zinc-400">
+            {user.perfil === 'ADMINISTRADOR' ? 'Gestão Administrativa' : 'Frente de Balcão'}
+          </span>
         </div>
       </div>
 
-      {/* Right Area: Actions, User Info & Logout */}
+      {/* Right: Actions, Theme Toggle & User */}
       <div className="flex items-center gap-3">
-        {/* Quick Sale / PDV Shortcut Button */}
+        {/* PDV Quick Action */}
         <Link
           href="/app/vendas"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-98"
+          className="inline-flex items-center gap-2 rounded-full bg-black dark:bg-white text-white dark:text-black px-4 py-2 text-xs font-semibold shadow-xs hover:opacity-90 active:scale-98 transition"
         >
           <PlusIcon size={14} />
-          <span>PDV</span>
+          <span>Nova Venda</span>
         </Link>
 
-        {/* User Role Tag */}
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
+        {/* User Avatar */}
         <Link
           href="/app/perfil"
-          className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/70 px-3 py-1.5 hover:bg-slate-100/80 transition"
-          title="Ver perfil"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F4F5F7] dark:bg-[#1A202C] border border-black/5 dark:border-white/10 text-zinc-800 dark:text-zinc-200 font-bold text-xs hover:opacity-80 transition"
+          title={`Perfil de ${user.nome}`}
         >
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold">
-            <UserIcon size={13} />
-          </div>
-          <span className="text-xs font-bold text-slate-800 max-w-[130px] truncate">{user.nome}</span>
-          <Badge variant={isAdmin ? 'neutral' : 'info'} className="text-[9px] py-0 px-1.5 font-bold">
-            {user.perfil}
-          </Badge>
+          {user.nome.slice(0, 2).toUpperCase()}
         </Link>
 
-        {/* Logout Form */}
-        <form action="/api/auth/logout" method="POST" className="inline-block">
+        <form action="/api/auth/logout" method="POST" className="hidden sm:block">
           <button
             type="submit"
-            title="Terminar Sessão"
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 transition"
+            className="p-2 rounded-full text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer"
+            title="Terminar sessão"
+            aria-label="Terminar sessão"
           >
             <LogoutIcon size={16} />
-            <span className="hidden md:inline text-xs font-bold">Sair</span>
           </button>
         </form>
       </div>

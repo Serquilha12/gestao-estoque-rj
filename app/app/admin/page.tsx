@@ -56,9 +56,10 @@ export default async function AdminPage({
     personalizado: 'Personalizado',
   };
 
-  const maxTotalVendido = data.produtosMaisVendidos.length > 0
-    ? Math.max(...data.produtosMaisVendidos.map((p) => Number(p.totalFacturado)), 1)
-    : 1;
+  const maxTotalVendido =
+    data.produtosMaisVendidos.length > 0
+      ? Math.max(...data.produtosMaisVendidos.map((p) => Number(p.totalFacturado)), 1)
+      : 1;
 
   return (
     <main className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
@@ -67,13 +68,15 @@ export default async function AdminPage({
         <div>
           <div className="flex items-center gap-2">
             <Badge variant="neutral">Painel Executivo</Badge>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs font-semibold text-slate-500">{periodLabels[periodo]}</span>
+            <span className="text-xs text-neutral-400">•</span>
+            <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+              {periodLabels[periodo]}
+            </span>
           </div>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
             Visão Geral do Negócio
           </h1>
-          <p className="mt-0.5 text-xs sm:text-sm text-slate-500">
+          <p className="mt-0.5 text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
             Gestão estratégica, vendas em tempo real e monitorização de stock.
           </p>
         </div>
@@ -81,14 +84,14 @@ export default async function AdminPage({
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
             href="/app/vendas"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-emerald-800 transition"
+            className="inline-flex items-center gap-2 rounded-full bg-neutral-950 dark:bg-white px-4 py-2.5 text-xs sm:text-sm font-bold text-white dark:text-neutral-950 shadow-xs hover:opacity-90 transition-all duration-150"
           >
             <PlusIcon size={16} />
             <span>Nova Venda (PDV)</span>
           </Link>
           <Link
             href="/app/admin/relatorios"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121824] px-4 py-2.5 text-xs sm:text-sm font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all duration-150"
           >
             <ReportsIcon size={16} />
             <span>Relatórios</span>
@@ -97,209 +100,253 @@ export default async function AdminPage({
       </div>
 
       {/* Filter Toolbar */}
-      <Card className="p-4 bg-white shadow-xs">
-        <form method="GET" className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-3 shadow-xs">
+        <form method="GET" className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+            <span className="mr-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
               Período:
             </span>
-            {[
-              { key: 'hoje', label: 'Hoje' },
-              { key: '7d', label: '7 Dias' },
-              { key: '30d', label: '30 Dias' },
-              { key: 'mes', label: 'Este Mês' },
-              { key: 'todos', label: 'Todo o Histórico' },
-            ].map((p) => {
-              const active = periodo === p.key;
-              return (
-                <Link
-                  key={p.key}
-                  href={`/app/admin?periodo=${p.key}`}
-                  className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
-                    active
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                  }`}
-                >
-                  {p.label}
-                </Link>
-              );
-            })}
+            <div className="flex flex-wrap items-center gap-1 rounded-xl bg-neutral-100/80 dark:bg-neutral-900/60 p-1">
+              {[
+                { key: 'hoje', label: 'Hoje' },
+                { key: '7d', label: '7 Dias' },
+                { key: '30d', label: '30 Dias' },
+                { key: 'mes', label: 'Este Mês' },
+                { key: 'todos', label: 'Todo o Histórico' },
+              ].map((p) => {
+                const active = periodo === p.key;
+                return (
+                  <Link
+                    key={p.key}
+                    href={`/app/admin?periodo=${p.key}`}
+                    className={`rounded-lg px-3 py-1 text-xs font-bold transition-all duration-150 ${
+                      active
+                        ? 'bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 shadow-xs'
+                        : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {p.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 lg:border-t-0 lg:pt-0">
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 lg:border-t-0 lg:pt-0">
             <input type="hidden" name="periodo" value="personalizado" />
-            <span className="text-xs font-medium text-slate-500">De:</span>
+            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">De:</span>
             <input
               type="date"
               name="dataInicio"
               defaultValue={dataInicio}
-              className="rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 outline-none focus:border-emerald-600 focus:bg-white"
+              className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/60 px-2.5 py-1 text-xs text-neutral-800 dark:text-neutral-200 outline-none focus:border-neutral-900 dark:focus:border-white transition"
             />
-            <span className="text-xs font-medium text-slate-500">Até:</span>
+            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Até:</span>
             <input
               type="date"
               name="dataFim"
               defaultValue={dataFim}
-              className="rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 outline-none focus:border-emerald-600 focus:bg-white"
+              className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/60 px-2.5 py-1 text-xs text-neutral-800 dark:text-neutral-200 outline-none focus:border-neutral-900 dark:focus:border-white transition"
             />
             <button
               type="submit"
-              className="rounded-xl bg-slate-800 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-700 transition"
+              className="rounded-xl bg-neutral-950 dark:bg-white px-3.5 py-1 text-xs font-bold text-white dark:text-neutral-950 hover:opacity-90 transition"
             >
-              Aplicar
+              Filtrar
             </button>
           </div>
         </form>
-      </Card>
+      </div>
 
-      {/* KPI Cards Grid */}
+      {/* Bento Grid: Quick Stats */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Facturação */}
-        <Card className="p-5 border-l-4 border-l-emerald-600">
+        <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-5 shadow-xs transition-all duration-200">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Facturação ({periodLabels[periodo]})</p>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
-              <SalesIcon size={18} />
+            <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              Facturação ({periodLabels[periodo]})
+            </p>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
+              <SalesIcon size={16} />
             </div>
           </div>
-          <p className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            {Number(data.totalFacturadoPeriodo).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MT
+          <p className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-neutral-900 dark:text-white">
+            {Number(data.totalFacturadoPeriodo).toLocaleString('pt-PT', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}{' '}
+            <span className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">MT</span>
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
             Receita bruta acumulada no período
           </p>
-        </Card>
+        </div>
 
         {/* Total de Vendas */}
-        <Card className="p-5 border-l-4 border-l-sky-600">
+        <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-5 shadow-xs transition-all duration-200">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Vendas Realizadas</p>
-            <div className="p-2 rounded-xl bg-sky-50 text-sky-700">
-              <CheckCircleIcon size={18} />
+            <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              Vendas Concluídas
+            </p>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
+              <CheckCircleIcon size={16} />
             </div>
           </div>
-          <p className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+          <p className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-neutral-900 dark:text-white">
             {data.totalVendasPeriodo}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
-            Transacções concluídas com sucesso
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            Transacções finalizadas com sucesso
           </p>
-        </Card>
+        </div>
 
         {/* Ticket Médio */}
-        <Card className="p-5 border-l-4 border-l-indigo-600">
+        <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-5 shadow-xs transition-all duration-200">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Ticket Médio</p>
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-700">
-              <ReportsIcon size={18} />
+            <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              Ticket Médio
+            </p>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
+              <ReportsIcon size={16} />
             </div>
           </div>
-          <p className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            {Number(data.ticketMedioPeriodo).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MT
+          <p className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-neutral-900 dark:text-white">
+            {Number(data.ticketMedioPeriodo).toLocaleString('pt-PT', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}{' '}
+            <span className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">MT</span>
           </p>
-          <p className="mt-1 text-xs text-slate-500">
-            Valor médio por transacção
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            Média facturada por pedido
           </p>
-        </Card>
+        </div>
 
         {/* Alertas de Stock */}
-        <Card className={`p-5 border-l-4 ${data.produtosStockBaixo.length > 0 ? 'border-l-amber-500 bg-amber-50/20' : 'border-l-slate-300'}`}>
+        <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-5 shadow-xs transition-all duration-200">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Alertas de Stock</p>
-            <div className={`p-2 rounded-xl ${data.produtosStockBaixo.length > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
-              <AlertTriangleIcon size={18} />
+            <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              Alertas de Stock
+            </p>
+            <div
+              className={`flex h-8 w-8 items-center justify-center rounded-xl ${
+                data.produtosStockBaixo.length > 0
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+              }`}
+            >
+              <AlertTriangleIcon size={16} />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <p className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+            <p className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-900 dark:text-white">
               {data.produtosStockBaixo.length}
             </p>
             {data.produtosStockBaixo.length > 0 && (
-              <Badge variant="warning" className="text-[10px]">Atenção</Badge>
+              <Badge variant="warning" className="text-[10px]">
+                Atenção
+              </Badge>
             )}
           </div>
-          <p className="mt-1 text-xs text-slate-500">
-            Produtos em nível crítico ou esgotados
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            Artigos em nível crítico ou esgotados
           </p>
-        </Card>
+        </div>
       </div>
 
       {/* Financial Intelligence & Cash Register Closing Grid */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
         {/* Capital Imobilizado */}
-        <Card className="p-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md border-slate-700">
+        <div className="rounded-2xl border border-neutral-800 bg-[#090D14] text-white p-5 shadow-sm transition-all duration-200">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
               Capital Imobilizado
             </span>
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-800 text-emerald-400 border border-slate-700">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-neutral-900 text-white border border-neutral-800">
               <StockIcon size={16} />
             </span>
           </div>
           <p className="mt-3 text-2xl font-black text-white">
-            {Number(data.capitalImobilizado).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+            {Number(data.capitalImobilizado).toLocaleString('pt-PT', {
+              minimumFractionDigits: 2,
+            })}{' '}
+            <span className="text-sm font-normal text-neutral-400">MT</span>
           </p>
-          <p className="mt-1 text-xs text-slate-400">
-            Valor financeiro actualmente guardado no armazém/stock
+          <p className="mt-1 text-xs text-neutral-400">
+            Valor financeiro em custo actualmente no armazém/stock
           </p>
-        </Card>
+        </div>
 
         {/* Lucro Bruto Estimado */}
-        <Card className="p-5 bg-white border-l-4 border-l-emerald-600 shadow-xs">
+        <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-5 shadow-xs transition-all duration-200">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-800">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
               Lucro Bruto ({periodLabels[periodo]})
             </span>
-            <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-black text-emerald-800">
+            <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 text-xs font-bold text-neutral-900 dark:text-white">
               {data.margemLucroPeriodo}% Margem
             </span>
           </div>
-          <p className="mt-3 text-2xl font-black text-emerald-700">
-            {Number(data.lucroBrutoPeriodo).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+          <p className="mt-3 text-2xl font-black text-neutral-900 dark:text-white">
+            {Number(data.lucroBrutoPeriodo).toLocaleString('pt-PT', {
+              minimumFractionDigits: 2,
+            })}{' '}
+            <span className="text-sm font-normal text-neutral-500 dark:text-neutral-400">MT</span>
           </p>
-          <p className="mt-1 text-xs text-slate-500">
-            CMV deduzido: {Number(data.cmvPeriodo).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            CMV deduzido:{' '}
+            {Number(data.cmvPeriodo).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
           </p>
-        </Card>
+        </div>
 
         {/* Fecho de Caixa Hoje */}
-        <Card className="p-5 bg-white shadow-xs">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+        <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-5 shadow-xs transition-all duration-200">
+          <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-neutral-800">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
               Fecho de Caixa (Hoje)
             </span>
-            <span className="text-xs font-black text-slate-900">
-              {Number(data.totalFacturadoHoje).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+            <span className="text-xs font-bold text-neutral-900 dark:text-white">
+              {Number(data.totalFacturadoHoje).toLocaleString('pt-PT', {
+                minimumFractionDigits: 2,
+              })}{' '}
+              MT
             </span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-xl bg-slate-50 p-2 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px]">
-                <CashIcon size={14} className="text-emerald-600" /> Dinheiro:
+            <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-800/80 p-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-semibold text-[11px]">
+                <CashIcon size={14} className="text-neutral-900 dark:text-white" /> Dinheiro:
               </span>
-              <span className="font-bold text-slate-900">{Number(data.fechoCaixaHoje.dinheiro).toFixed(0)} MT</span>
+              <span className="font-bold text-neutral-900 dark:text-white">
+                {Number(data.fechoCaixaHoje.dinheiro).toFixed(0)} MT
+              </span>
             </div>
-            <div className="rounded-xl bg-slate-50 p-2 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px]">
-                <PhoneIcon size={14} className="text-rose-600" /> M-Pesa:
+            <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-800/80 p-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-semibold text-[11px]">
+                <PhoneIcon size={14} className="text-neutral-900 dark:text-white" /> M-Pesa:
               </span>
-              <span className="font-bold text-slate-900">{Number(data.fechoCaixaHoje.mpesa).toFixed(0)} MT</span>
+              <span className="font-bold text-neutral-900 dark:text-white">
+                {Number(data.fechoCaixaHoje.mpesa).toFixed(0)} MT
+              </span>
             </div>
-            <div className="rounded-xl bg-slate-50 p-2 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px]">
-                <PhoneIcon size={14} className="text-amber-600" /> e-Mola:
+            <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-800/80 p-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-semibold text-[11px]">
+                <PhoneIcon size={14} className="text-neutral-900 dark:text-white" /> e-Mola:
               </span>
-              <span className="font-bold text-slate-900">{Number(data.fechoCaixaHoje.emola).toFixed(0)} MT</span>
+              <span className="font-bold text-neutral-900 dark:text-white">
+                {Number(data.fechoCaixaHoje.emola).toFixed(0)} MT
+              </span>
             </div>
-            <div className="rounded-xl bg-slate-50 p-2 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px]">
-                <CreditCardIcon size={14} className="text-sky-600" /> Cartão:
+            <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-800/80 p-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-semibold text-[11px]">
+                <CreditCardIcon size={14} className="text-neutral-900 dark:text-white" /> Cartão:
               </span>
-              <span className="font-bold text-slate-900">{Number(data.fechoCaixaHoje.cartao).toFixed(0)} MT</span>
+              <span className="font-bold text-neutral-900 dark:text-white">
+                {Number(data.fechoCaixaHoje.cartao).toFixed(0)} MT
+              </span>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Main Content Grid: Top Selling Products & Stock Alerts */}
@@ -309,11 +356,13 @@ export default async function AdminPage({
           <CardHeader className="flex items-center justify-between">
             <div>
               <CardTitle>Produtos Mais Vendidos</CardTitle>
-              <p className="text-xs text-slate-500 mt-0.5">Ranking por quantidade e valor facturado ({periodLabels[periodo]})</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Ranking por quantidade e valor facturado ({periodLabels[periodo]})
+              </p>
             </div>
             <Link
               href="/app/admin/relatorios"
-              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800"
+              className="inline-flex items-center gap-1 text-xs font-bold text-neutral-900 dark:text-white hover:opacity-80 transition"
             >
               <span>Ver todos</span>
               <ArrowRightIcon size={14} />
@@ -327,34 +376,43 @@ export default async function AdminPage({
                 className="m-6"
               />
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-neutral-100 dark:divide-neutral-800/80">
                 {data.produtosMaisVendidos.map((prod, index) => {
                   const valFaturado = Number(prod.totalFacturado);
                   const percentagem = Math.round((valFaturado / maxTotalVendido) * 100);
                   return (
-                    <div key={prod.produtoId} className="p-4 hover:bg-slate-50/80 transition-colors">
+                    <div
+                      key={prod.produtoId}
+                      className="p-4 hover:bg-neutral-50/70 dark:hover:bg-neutral-900/40 transition-colors"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-extrabold text-slate-700">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-900 dark:text-neutral-100">
                             {index + 1}
                           </span>
                           <div>
-                            <p className="text-xs font-bold text-slate-900">{prod.nome}</p>
-                            <p className="text-[11px] text-slate-500">{prod.codigo} • {prod.categoriaNome}</p>
+                            <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                              {prod.nome}
+                            </p>
+                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                              {prod.codigo} • {prod.categoriaNome}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-xs font-bold text-emerald-700">
-                            {valFaturado.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MT
+                          <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                            {valFaturado.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}{' '}
+                            MT
                           </p>
-                          <p className="text-[11px] text-slate-500">
-                            {prod.quantidadeVendida} {prod.quantidadeVendida === 1 ? 'unidade' : 'unidades'}
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                            {prod.quantidadeVendida}{' '}
+                            {prod.quantidadeVendida === 1 ? 'unidade' : 'unidades'}
                           </p>
                         </div>
                       </div>
-                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
                         <div
-                          className="h-full rounded-full bg-emerald-600 transition-all duration-300"
+                          className="h-full rounded-full bg-neutral-900 dark:bg-white transition-all duration-300"
                           style={{ width: `${percentagem}%` }}
                         />
                       </div>
@@ -371,11 +429,13 @@ export default async function AdminPage({
           <CardHeader className="flex items-center justify-between">
             <div>
               <CardTitle>Produtos em Alerta de Stock</CardTitle>
-              <p className="text-xs text-slate-500 mt-0.5">Itens com stock igual ou inferior ao mínimo definido</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Itens com stock igual ou inferior ao mínimo definido
+              </p>
             </div>
             <Link
               href="/app/admin/stock"
-              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800"
+              className="inline-flex items-center gap-1 text-xs font-bold text-neutral-900 dark:text-white hover:opacity-80 transition"
             >
               <span>Gerir stock</span>
               <ArrowRightIcon size={14} />
@@ -384,15 +444,15 @@ export default async function AdminPage({
           <CardContent className="flex-1 p-0">
             {data.produtosStockBaixo.length === 0 ? (
               <EmptyState
-                icon={<CheckCircleIcon size={24} className="text-emerald-600" />}
+                icon={<CheckCircleIcon size={24} className="text-neutral-900 dark:text-white" />}
                 title="Stock em Níveis Saudáveis"
                 description="Todos os produtos activos encontram-se com níveis de stock acima do mínimo definido."
                 className="m-6"
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-700">
-                  <thead className="bg-slate-50 text-[11px] uppercase font-bold text-slate-500">
+                <table className="w-full text-left text-xs text-neutral-700 dark:text-neutral-300">
+                  <thead className="bg-neutral-50 dark:bg-neutral-900/60 text-[11px] uppercase font-bold text-neutral-500 dark:text-neutral-400">
                     <tr>
                       <th className="px-4 py-3">Produto</th>
                       <th className="px-4 py-3 text-center">Actual</th>
@@ -401,17 +461,20 @@ export default async function AdminPage({
                       <th className="px-4 py-3 text-right">Acção</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                     {data.produtosStockBaixo.map((prod) => (
-                      <tr key={prod.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr
+                        key={prod.id}
+                        className="hover:bg-neutral-50/70 dark:hover:bg-neutral-900/40 transition-colors"
+                      >
                         <td className="px-4 py-3">
-                          <p className="font-bold text-slate-900">{prod.nome}</p>
-                          <p className="text-[10px] text-slate-400">{prod.codigo}</p>
+                          <p className="font-bold text-neutral-900 dark:text-white">{prod.nome}</p>
+                          <p className="text-[10px] text-neutral-400">{prod.codigo}</p>
                         </td>
-                        <td className="px-4 py-3 text-center font-extrabold text-rose-700">
+                        <td className="px-4 py-3 text-center font-extrabold text-rose-600 dark:text-rose-400">
                           {prod.stockActual}
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-500">
+                        <td className="px-4 py-3 text-center text-neutral-500 dark:text-neutral-400">
                           {prod.stockMinimo}
                         </td>
                         <td className="px-4 py-3 text-center">
@@ -424,7 +487,7 @@ export default async function AdminPage({
                         <td className="px-4 py-3 text-right">
                           <Link
                             href={`/app/admin/stock?produtoId=${prod.id}`}
-                            className="inline-flex rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 transition"
+                            className="inline-flex rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2.5 py-1 text-[11px] font-semibold text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition"
                           >
                             Repor
                           </Link>
@@ -443,60 +506,60 @@ export default async function AdminPage({
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
         <Link
           href="/app/admin/produtos"
-          className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs hover:border-emerald-500 hover:shadow-md transition-all duration-200"
+          className="group rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-4 shadow-xs hover:border-neutral-900 dark:hover:border-neutral-500 transition-all duration-200"
         >
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-slate-100 p-2.5 text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition">
+            <div className="rounded-xl bg-neutral-100 dark:bg-neutral-800 p-2.5 text-neutral-800 dark:text-neutral-200 group-hover:bg-neutral-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-neutral-900 transition">
               <ProductsIcon size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">Catálogo</p>
-              <p className="text-[11px] text-slate-500">Produtos e preços</p>
+              <p className="text-xs font-bold text-neutral-900 dark:text-white">Catálogo</p>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">Produtos e preços</p>
             </div>
           </div>
         </Link>
 
         <Link
           href="/app/admin/stock"
-          className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs hover:border-emerald-500 hover:shadow-md transition-all duration-200"
+          className="group rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-4 shadow-xs hover:border-neutral-900 dark:hover:border-neutral-500 transition-all duration-200"
         >
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-slate-100 p-2.5 text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition">
+            <div className="rounded-xl bg-neutral-100 dark:bg-neutral-800 p-2.5 text-neutral-800 dark:text-neutral-200 group-hover:bg-neutral-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-neutral-900 transition">
               <StockIcon size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">Stock</p>
-              <p className="text-[11px] text-slate-500">Entrada e ajustes</p>
+              <p className="text-xs font-bold text-neutral-900 dark:text-white">Stock</p>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">Entrada e ajustes</p>
             </div>
           </div>
         </Link>
 
         <Link
           href="/app/admin/relatorios"
-          className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs hover:border-emerald-500 hover:shadow-md transition-all duration-200"
+          className="group rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-4 shadow-xs hover:border-neutral-900 dark:hover:border-neutral-500 transition-all duration-200"
         >
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-slate-100 p-2.5 text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition">
+            <div className="rounded-xl bg-neutral-100 dark:bg-neutral-800 p-2.5 text-neutral-800 dark:text-neutral-200 group-hover:bg-neutral-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-neutral-900 transition">
               <ReportsIcon size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">Relatórios</p>
-              <p className="text-[11px] text-slate-500">Análise de vendas</p>
+              <p className="text-xs font-bold text-neutral-900 dark:text-white">Relatórios</p>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">Análise de vendas</p>
             </div>
           </div>
         </Link>
 
         <Link
           href="/app/admin/users"
-          className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs hover:border-emerald-500 hover:shadow-md transition-all duration-200"
+          className="group rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#121824] p-4 shadow-xs hover:border-neutral-900 dark:hover:border-neutral-500 transition-all duration-200"
         >
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-slate-100 p-2.5 text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition">
+            <div className="rounded-xl bg-neutral-100 dark:bg-neutral-800 p-2.5 text-neutral-800 dark:text-neutral-200 group-hover:bg-neutral-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-neutral-900 transition">
               <SalesIcon size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">Utilizadores</p>
-              <p className="text-[11px] text-slate-500">Gestão de acessos</p>
+              <p className="text-xs font-bold text-neutral-900 dark:text-white">Utilizadores</p>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">Gestão de acessos</p>
             </div>
           </div>
         </Link>
