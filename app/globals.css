@@ -5,6 +5,8 @@
 
 @import "tailwindcss";
 
+@source "../src";
+
 @variant dark (&:where(.dark, .dark *));
 
 @import "../src/styles/tokens.css";
