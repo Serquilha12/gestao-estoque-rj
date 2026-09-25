@@ -81,20 +81,20 @@ export default async function AdminPage({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            href="/app/vendas"
-            className="inline-flex items-center gap-2 rounded-full bg-neutral-950 dark:bg-white px-4 py-2.5 text-xs sm:text-sm font-bold text-white dark:text-neutral-950 shadow-xs hover:opacity-90 transition-all duration-150"
-          >
-            <PlusIcon size={16} />
-            <span>Nova Venda (PDV)</span>
-          </Link>
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/app/admin/relatorios"
-            className="inline-flex items-center gap-2 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121824] px-4 py-2.5 text-xs sm:text-sm font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all duration-150"
+            className="inline-flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#121824] px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition shadow-2xs"
           >
-            <ReportsIcon size={16} />
+            <ReportsIcon size={14} />
             <span>Relatórios</span>
+          </Link>
+          <Link
+            href="/app/admin/stock"
+            className="inline-flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#121824] px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition shadow-2xs"
+          >
+            <StockIcon size={14} />
+            <span>Gestão Stock</span>
           </Link>
         </div>
       </div>
@@ -132,25 +132,29 @@ export default async function AdminPage({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 lg:border-t-0 lg:pt-0">
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5 dark:border-white/5 lg:border-t-0 lg:pt-0">
             <input type="hidden" name="periodo" value="personalizado" />
-            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">De:</span>
-            <input
-              type="date"
-              name="dataInicio"
-              defaultValue={dataInicio}
-              className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/60 px-2.5 py-1 text-xs text-neutral-800 dark:text-neutral-200 outline-none focus:border-neutral-900 dark:focus:border-white transition"
-            />
-            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Até:</span>
-            <input
-              type="date"
-              name="dataFim"
-              defaultValue={dataFim}
-              className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/60 px-2.5 py-1 text-xs text-neutral-800 dark:text-neutral-200 outline-none focus:border-neutral-900 dark:focus:border-white transition"
-            />
+            <div className="flex items-center gap-1.5 rounded-full bg-zinc-50 dark:bg-zinc-900/60 border border-black/10 dark:border-white/10 px-3 py-1">
+              <span className="text-[11px] font-semibold text-zinc-400">De:</span>
+              <input
+                type="date"
+                name="dataInicio"
+                defaultValue={dataInicio}
+                className="bg-transparent text-xs text-zinc-800 dark:text-zinc-200 outline-none"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full bg-zinc-50 dark:bg-zinc-900/60 border border-black/10 dark:border-white/10 px-3 py-1">
+              <span className="text-[11px] font-semibold text-zinc-400">Até:</span>
+              <input
+                type="date"
+                name="dataFim"
+                defaultValue={dataFim}
+                className="bg-transparent text-xs text-zinc-800 dark:text-zinc-200 outline-none"
+              />
+            </div>
             <button
               type="submit"
-              className="rounded-xl bg-neutral-950 dark:bg-white px-3.5 py-1 text-xs font-bold text-white dark:text-neutral-950 hover:opacity-90 transition"
+              className="rounded-full bg-black dark:bg-white px-4 py-1.5 text-xs font-bold text-white dark:text-black hover:opacity-90 active:scale-95 transition cursor-pointer shadow-2xs"
             >
               Filtrar
             </button>
@@ -257,23 +261,23 @@ export default async function AdminPage({
       {/* Financial Intelligence & Cash Register Closing Grid */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
         {/* Capital Imobilizado */}
-        <div className="rounded-2xl border border-neutral-800 bg-[#090D14] text-white p-5 shadow-sm transition-all duration-200">
+        <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#121824] p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
               Capital Imobilizado
             </span>
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-neutral-900 text-white border border-neutral-800">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white">
               <StockIcon size={16} />
             </span>
           </div>
-          <p className="mt-3 text-2xl font-black text-white">
+          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white">
             {Number(data.capitalImobilizado).toLocaleString('pt-PT', {
               minimumFractionDigits: 2,
             })}{' '}
-            <span className="text-sm font-normal text-neutral-400">MT</span>
+            <span className="text-sm font-semibold text-zinc-500">MT</span>
           </p>
-          <p className="mt-1 text-xs text-neutral-400">
-            Valor financeiro em custo actualmente no armazém/stock
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Valor em custo actualmente no armazém/stock
           </p>
         </div>
 

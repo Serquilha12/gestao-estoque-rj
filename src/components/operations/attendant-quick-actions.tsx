@@ -18,8 +18,7 @@ export function AttendantQuickActions() {
           variant="outline"
           size="sm"
           onClick={() => setQuebraModalAberto(true)}
-          className="text-xs font-bold gap-1.5 border-amber-300 bg-amber-50/50 text-amber-900 hover:bg-amber-100"
-          leftIcon={<AlertTriangleIcon size={15} className="text-amber-600" />}
+          leftIcon={<AlertTriangleIcon size={14} className="text-amber-500" />}
         >
           Registar Quebra
         </Button>
@@ -29,8 +28,7 @@ export function AttendantQuickActions() {
           variant="outline"
           size="sm"
           onClick={() => setContagemModalAberto(true)}
-          className="text-xs font-bold gap-1.5 border-cyan-300 bg-cyan-50/50 text-cyan-900 hover:bg-cyan-100"
-          leftIcon={<CheckCircleIcon size={15} className="text-cyan-600" />}
+          leftIcon={<CheckCircleIcon size={14} className="text-zinc-500" />}
         >
           Contagem de Turno
         </Button>

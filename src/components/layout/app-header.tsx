@@ -29,25 +29,25 @@ export function AppHeader({ user, onOpenMobileMenu }: AppHeaderProps) {
           <MenuIcon size={18} />
         </button>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-zinc-900 dark:text-white">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
             Take Away Rui Júnior
           </span>
-          <span className="text-zinc-300 dark:text-zinc-700">•</span>
-          <span className="text-xs text-zinc-600 dark:text-zinc-400">
+          <span className="text-zinc-300 dark:text-zinc-700 hidden sm:inline">•</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline truncate">
             {user.perfil === 'ADMINISTRADOR' ? 'Gestão Administrativa' : 'Frente de Balcão'}
           </span>
         </div>
       </div>
 
       {/* Right: Actions, Theme Toggle & User */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
         {/* PDV Quick Action */}
         <Link
           href="/app/vendas"
-          className="inline-flex items-center gap-2 rounded-full bg-black dark:bg-white text-white dark:text-black px-4 py-2 text-xs font-semibold shadow-xs hover:opacity-90 active:scale-98 transition"
+          className="hidden sm:inline-flex items-center gap-2 rounded-full bg-black dark:bg-white text-white dark:text-black px-3.5 py-1.5 text-xs font-semibold shadow-xs hover:opacity-90 active:scale-98 transition"
         >
-          <PlusIcon size={14} />
+          <PlusIcon size={13} />
           <span>Nova Venda</span>
         </Link>
 
