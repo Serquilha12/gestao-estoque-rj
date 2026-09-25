@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { db } from '@/src/prisma/db';
+import { supabaseAdmin } from '@/src/lib/supabase/admin';
 import {
   stockAdjustmentSchema,
   stockEntrySchema,
@@ -31,40 +32,86 @@ export async function recordStockEntry(utilizadorId: number, input: StockEntryIn
     throw new Error(parsed.error.issues[0]?.message ?? 'Dados de entrada de stock inválidos.');
   }
 
-  return db.transaction(async (tx) => {
-    const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
-    if (!produto) {
-      throw new Error('Produto não encontrado.');
-    }
-    if (!produto.activo) {
-      throw new Error(`O produto ${produto.nome} está inactivo.`);
+  // 1. Tentar primeiro via Prisma ORM
+  try {
+    return await db.transaction(async (tx) => {
+      const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
+      if (!produto) {
+        throw new Error('Produto não encontrado.');
+      }
+      if (!produto.activo) {
+        throw new Error(`O produto ${produto.nome} está inactivo.`);
+      }
+
+      const stockAnterior = produto.stockActual;
+      const stockPosterior = stockAnterior + parsed.data.quantidade;
+
+      await tx.orm.public.Produto.where({ id: produto.id }).update({
+        stockActual: stockPosterior,
+      });
+
+      const movimento = await tx.orm.public.MovimentoStock.create({
+        produtoId: produto.id,
+        utilizadorId,
+        tipo: 'ENTRADA',
+        quantidade: parsed.data.quantidade,
+        stockAnterior,
+        stockPosterior,
+        motivo: parsed.data.motivo ?? 'Entrada manual de stock',
+      });
+
+      return {
+        movimento,
+        produto: {
+          id: produto.id,
+          stockActual: stockPosterior,
+        },
+      };
+    });
+  } catch (err) {
+    if (err instanceof Error && (err.message.includes('não encontrado') || err.message.includes('inactivo'))) {
+      throw err;
     }
 
-    const stockAnterior = produto.stockActual;
+    // 2. Fallback Supabase REST
+    const { data: prodData } = await supabaseAdmin
+      .from('Produto')
+      .select('id, nome, stockActual, activo')
+      .eq('id', parsed.data.produtoId)
+      .maybeSingle();
+
+    if (!prodData) throw new Error('Produto não encontrado.');
+    if (!prodData.activo) throw new Error(`O produto ${prodData.nome} está inactivo.`);
+
+    const stockAnterior = Number(prodData.stockActual);
     const stockPosterior = stockAnterior + parsed.data.quantidade;
 
-    await tx.orm.public.Produto.where({ id: produto.id }).update({
-      stockActual: stockPosterior,
-    });
+    await supabaseAdmin.from('Produto').update({ stockActual: stockPosterior }).eq('id', prodData.id);
 
-    const movimento = await tx.orm.public.MovimentoStock.create({
-      produtoId: produto.id,
-      utilizadorId,
-      tipo: 'ENTRADA',
-      quantidade: parsed.data.quantidade,
-      stockAnterior,
-      stockPosterior,
-      motivo: parsed.data.motivo ?? 'Entrada manual de stock',
-    });
+    const { data: movData, error: movErr } = await supabaseAdmin
+      .from('MovimentoStock')
+      .insert({
+        produtoId: prodData.id,
+        utilizadorId,
+        tipo: 'ENTRADA',
+        quantidade: parsed.data.quantidade,
+        stockAnterior,
+        stockPosterior,
+        motivo: parsed.data.motivo ?? 'Entrada manual de stock',
+      })
+      .select()
+      .single();
+
+    if (movErr || !movData) throw new Error(movErr?.message || 'Erro ao registar entrada de stock.');
 
     return {
-      movimento,
+      movimento: movData,
       produto: {
-        id: produto.id,
+        id: Number(prodData.id),
         stockActual: stockPosterior,
       },
     };
-  });
+  }
 }
 
 export async function recordStockExit(utilizadorId: number, input: StockExitInput) {
@@ -73,55 +120,103 @@ export async function recordStockExit(utilizadorId: number, input: StockExitInpu
     throw new Error(parsed.error.issues[0]?.message ?? 'Dados de saída de stock inválidos.');
   }
 
-  return db.transaction(async (tx) => {
-    const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
-    if (!produto) {
-      throw new Error('Produto não encontrado.');
-    }
-    if (!produto.activo) {
-      throw new Error(`O produto ${produto.nome} está inactivo.`);
-    }
-    if (produto.stockActual < parsed.data.quantidade) {
-      throw new Error(`Stock insuficiente para o produto ${produto.nome}.`);
-    }
+  // 1. Tentar primeiro via Prisma ORM
+  try {
+    return await db.transaction(async (tx) => {
+      const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
+      if (!produto) {
+        throw new Error('Produto não encontrado.');
+      }
+      if (!produto.activo) {
+        throw new Error(`O produto ${produto.nome} está inactivo.`);
+      }
+      if (produto.stockActual < parsed.data.quantidade) {
+        throw new Error(`Stock insuficiente para o produto ${produto.nome}.`);
+      }
 
-    const stockAnterior = produto.stockActual;
-    const stockPosterior = stockAnterior - parsed.data.quantidade;
+      const stockAnterior = produto.stockActual;
+      const stockPosterior = stockAnterior - parsed.data.quantidade;
 
-    const updatePlan = tx.sql.public.produto
-      .update((fields, fns) => ({
-        stockActual: fns.raw`${fields.stockActual} - ${parsed.data.quantidade}`.returns('pg/int4@1'),
-      }))
-      .where((fields, fns) => fns.and(
-        fns.eq(fields.id, produto.id),
-        fns.gte(fields.stockActual, parsed.data.quantidade),
-      ))
-      .returning('id', 'stockActual')
-      .build();
-    const updated = await tx.query(updatePlan);
+      const updatePlan = tx.sql.public.produto
+        .update((fields, fns) => ({
+          stockActual: fns.raw`${fields.stockActual} - ${parsed.data.quantidade}`.returns('pg/int4@1'),
+        }))
+        .where((fields, fns) => fns.and(
+          fns.eq(fields.id, produto.id),
+          fns.gte(fields.stockActual, parsed.data.quantidade),
+        ))
+        .returning('id', 'stockActual')
+        .build();
+      const updated = await tx.query(updatePlan);
 
-    if (updated.length !== 1) {
-      throw new Error('Stock insuficiente para concluir a saída.');
-    }
+      if (updated.length !== 1) {
+        throw new Error('Stock insuficiente para concluir a saída.');
+      }
 
-    const movimento = await tx.orm.public.MovimentoStock.create({
-      produtoId: produto.id,
-      utilizadorId,
-      tipo: 'SAIDA',
-      quantidade: parsed.data.quantidade,
-      stockAnterior,
-      stockPosterior,
-      motivo: parsed.data.motivo ?? 'Saída manual de stock',
+      const movimento = await tx.orm.public.MovimentoStock.create({
+        produtoId: produto.id,
+        utilizadorId,
+        tipo: 'SAIDA',
+        quantidade: parsed.data.quantidade,
+        stockAnterior,
+        stockPosterior,
+        motivo: parsed.data.motivo ?? 'Saída manual de stock',
+      });
+
+      return {
+        movimento,
+        produto: {
+          id: produto.id,
+          stockActual: stockPosterior,
+        },
+      };
     });
+  } catch (err) {
+    if (err instanceof Error && (err.message.includes('não encontrado') || err.message.includes('inactivo') || err.message.includes('insuficiente'))) {
+      throw err;
+    }
+
+    // 2. Fallback Supabase REST
+    const { data: prodData } = await supabaseAdmin
+      .from('Produto')
+      .select('id, nome, stockActual, activo')
+      .eq('id', parsed.data.produtoId)
+      .maybeSingle();
+
+    if (!prodData) throw new Error('Produto não encontrado.');
+    if (!prodData.activo) throw new Error(`O produto ${prodData.nome} está inactivo.`);
+    const currentStock = Number(prodData.stockActual);
+    if (currentStock < parsed.data.quantidade) {
+      throw new Error(`Stock insuficiente para o produto ${prodData.nome}.`);
+    }
+
+    const stockPosterior = currentStock - parsed.data.quantidade;
+    await supabaseAdmin.from('Produto').update({ stockActual: stockPosterior }).eq('id', prodData.id);
+
+    const { data: movData, error: movErr } = await supabaseAdmin
+      .from('MovimentoStock')
+      .insert({
+        produtoId: prodData.id,
+        utilizadorId,
+        tipo: 'SAIDA',
+        quantidade: parsed.data.quantidade,
+        stockAnterior: currentStock,
+        stockPosterior,
+        motivo: parsed.data.motivo ?? 'Saída manual de stock',
+      })
+      .select()
+      .single();
+
+    if (movErr || !movData) throw new Error(movErr?.message || 'Erro ao registar saída de stock.');
 
     return {
-      movimento,
+      movimento: movData,
       produto: {
-        id: produto.id,
+        id: Number(prodData.id),
         stockActual: stockPosterior,
       },
     };
-  });
+  }
 }
 
 export async function recordStockAdjustment(utilizadorId: number, input: StockAdjustmentInput) {
@@ -130,41 +225,88 @@ export async function recordStockAdjustment(utilizadorId: number, input: StockAd
     throw new Error(parsed.error.issues[0]?.message ?? 'Dados de ajuste de stock inválidos.');
   }
 
-  return db.transaction(async (tx) => {
-    const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
-    if (!produto) {
-      throw new Error('Produto não encontrado.');
-    }
-    if (!produto.activo) {
-      throw new Error(`O produto ${produto.nome} está inactivo.`);
+  // 1. Tentar primeiro via Prisma ORM
+  try {
+    return await db.transaction(async (tx) => {
+      const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
+      if (!produto) {
+        throw new Error('Produto não encontrado.');
+      }
+      if (!produto.activo) {
+        throw new Error(`O produto ${produto.nome} está inactivo.`);
+      }
+
+      const stockAnterior = produto.stockActual;
+      const stockPosterior = parsed.data.novoStock;
+      const diferenca = stockPosterior - stockAnterior;
+
+      await tx.orm.public.Produto.where({ id: produto.id }).update({
+        stockActual: stockPosterior,
+      });
+
+      const movimento = await tx.orm.public.MovimentoStock.create({
+        produtoId: produto.id,
+        utilizadorId,
+        tipo: 'AJUSTE',
+        quantidade: Math.abs(diferenca),
+        stockAnterior,
+        stockPosterior,
+        motivo: parsed.data.motivo,
+      });
+
+      return {
+        movimento,
+        produto: {
+          id: produto.id,
+          stockActual: stockPosterior,
+        },
+      };
+    });
+  } catch (err) {
+    if (err instanceof Error && (err.message.includes('não encontrado') || err.message.includes('inactivo'))) {
+      throw err;
     }
 
-    const stockAnterior = produto.stockActual;
+    // 2. Fallback Supabase REST
+    const { data: prodData } = await supabaseAdmin
+      .from('Produto')
+      .select('id, nome, stockActual, activo')
+      .eq('id', parsed.data.produtoId)
+      .maybeSingle();
+
+    if (!prodData) throw new Error('Produto não encontrado.');
+    if (!prodData.activo) throw new Error(`O produto ${prodData.nome} está inactivo.`);
+
+    const stockAnterior = Number(prodData.stockActual);
     const stockPosterior = parsed.data.novoStock;
     const diferenca = stockPosterior - stockAnterior;
 
-    await tx.orm.public.Produto.where({ id: produto.id }).update({
-      stockActual: stockPosterior,
-    });
+    await supabaseAdmin.from('Produto').update({ stockActual: stockPosterior }).eq('id', prodData.id);
 
-    const movimento = await tx.orm.public.MovimentoStock.create({
-      produtoId: produto.id,
-      utilizadorId,
-      tipo: 'AJUSTE',
-      quantidade: Math.abs(diferenca),
-      stockAnterior,
-      stockPosterior,
-      motivo: parsed.data.motivo,
-    });
+    const { data: movData, error: movErr } = await supabaseAdmin
+      .from('MovimentoStock')
+      .insert({
+        produtoId: prodData.id,
+        utilizadorId,
+        tipo: 'AJUSTE',
+        quantidade: Math.abs(diferenca),
+        stockAnterior,
+        stockPosterior,
+        motivo: parsed.data.motivo,
+      })
+      .select()
+      .single();
+
+    if (movErr || !movData) throw new Error(movErr?.message || 'Erro ao registar ajuste de stock.');
 
     return {
-      movimento,
+      movimento: movData,
       produto: {
-        id: produto.id,
+        id: Number(prodData.id),
         stockActual: stockPosterior,
       },
     };
-  });
+  }
 }
 
 export async function getStockMovements(filters?: {
@@ -174,37 +316,58 @@ export async function getStockMovements(filters?: {
   dataInicio?: string | null;
   dataFim?: string | null;
 }) {
-  const movimentos = await db.orm.public.MovimentoStock
-    .select('id', 'produtoId', 'utilizadorId', 'tipo', 'quantidade', 'stockAnterior', 'stockPosterior', 'motivo', 'criadoEm')
-    .orderBy((m) => m.criadoEm.desc())
-    .all();
+  let rawMovimentos: any[] = [];
+  let produtos: any[] = [];
+  let utilizadores: any[] = [];
 
-  const [produtos, utilizadores] = await Promise.all([
-    db.orm.public.Produto.select('id', 'codigo', 'nome').all(),
-    db.orm.public.Utilizador.select('id', 'nome').all(),
-  ]);
+  // 1. Tentar primeiro via Prisma ORM
+  try {
+    rawMovimentos = await db.orm.public.MovimentoStock
+      .select('id', 'produtoId', 'utilizadorId', 'tipo', 'quantidade', 'stockAnterior', 'stockPosterior', 'motivo', 'criadoEm')
+      .orderBy((m) => m.criadoEm.desc())
+      .all();
 
-  const produtoMap = new Map(produtos.map((p) => [p.id, p]));
-  const utilizadorMap = new Map(utilizadores.map((u) => [u.id, u]));
+    [produtos, utilizadores] = await Promise.all([
+      db.orm.public.Produto.select('id', 'codigo', 'nome').all(),
+      db.orm.public.Utilizador.select('id', 'nome').all(),
+    ]);
+  } catch {
+    // 2. Fallback Supabase REST
+    try {
+      const [mRes, pRes, uRes] = await Promise.all([
+        supabaseAdmin.from('MovimentoStock').select('*').order('criadoEm', { ascending: false }),
+        supabaseAdmin.from('Produto').select('id, codigo, nome'),
+        supabaseAdmin.from('Utilizador').select('id, nome'),
+      ]);
+      rawMovimentos = mRes.data ?? [];
+      produtos = pRes.data ?? [];
+      utilizadores = uRes.data ?? [];
+    } catch {
+      rawMovimentos = [];
+    }
+  }
 
-  return movimentos
+  const produtoMap = new Map(produtos.map((p) => [Number(p.id), p]));
+  const utilizadorMap = new Map(utilizadores.map((u) => [Number(u.id), u]));
+
+  return rawMovimentos
     .map((m) => {
-      const prod = produtoMap.get(m.produtoId);
-      const user = utilizadorMap.get(m.utilizadorId);
+      const prod = produtoMap.get(Number(m.produtoId));
+      const user = utilizadorMap.get(Number(m.utilizadorId));
 
       return {
-        id: m.id,
-        produtoId: m.produtoId,
+        id: Number(m.id),
+        produtoId: Number(m.produtoId),
         produtoNome: prod?.nome ?? 'Produto Removido',
         produtoCodigo: prod?.codigo ?? '-',
-        utilizadorId: m.utilizadorId,
+        utilizadorId: Number(m.utilizadorId),
         utilizadorNome: user?.nome ?? 'Utilizador Desconhecido',
         tipo: m.tipo as 'ENTRADA' | 'SAIDA' | 'AJUSTE',
-        quantidade: m.quantidade,
-        stockAnterior: m.stockAnterior,
-        stockPosterior: m.stockPosterior,
-        motivo: m.motivo,
-        criadoEm: m.criadoEm,
+        quantidade: Number(m.quantidade),
+        stockAnterior: Number(m.stockAnterior),
+        stockPosterior: Number(m.stockPosterior),
+        motivo: m.motivo ? String(m.motivo) : null,
+        criadoEm: String(m.criadoEm),
       } satisfies StockMovementListItem;
     })
     .filter((m) => {

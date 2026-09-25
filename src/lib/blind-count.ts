@@ -2,7 +2,9 @@ import 'server-only';
 
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { db } from '@/src/prisma/db';
+import { supabaseAdmin } from '@/src/lib/supabase/admin';
 import { recordStockAdjustment, recordStockExit } from '@/src/lib/stock';
 
 export interface BlindCountItemInput {
@@ -47,31 +49,51 @@ export interface BlindCountRecord {
   homologadoPor?: string | null;
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+// Em ambientes serverless como Vercel, o diretório raiz é somente leitura; usamos /tmp
+const BASE_DIR = process.env.VERCEL ? os.tmpdir() : process.cwd();
+const DATA_DIR = path.join(BASE_DIR, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'blind-counts.json');
 
+// Memória local em runtime para fallback
+let inMemoryCounts: BlindCountRecord[] = [];
+
 function ensureDataFile() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), 'utf-8');
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), 'utf-8');
+    }
+  } catch {
+    // Falha silenciosa caso o sistema de ficheiros seja estritamente somente leitura
   }
 }
 
 function readAllCounts(): BlindCountRecord[] {
   ensureDataFile();
   try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-    return JSON.parse(raw) as BlindCountRecord[];
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+      const parsed = JSON.parse(raw) as BlindCountRecord[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
   } catch {
-    return [];
+    // Fallback para memória
   }
+  return inMemoryCounts;
 }
 
 function saveAllCounts(counts: BlindCountRecord[]) {
+  inMemoryCounts = counts;
   ensureDataFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(counts, null, 2), 'utf-8');
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(counts, null, 2), 'utf-8');
+  } catch {
+    // Mantém em memória se não for possível escrever em disco
+  }
 }
 
 /**
@@ -81,14 +103,35 @@ export async function submitBlindCount(
   utilizadorId: number,
   input: BlindCountInput
 ): Promise<BlindCountRecord> {
-  const utilizador = await db.orm.public.Utilizador.where({ id: utilizadorId }).first();
-  const produtos = await db.orm.public.Produto.select(
-    'id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'stockActual', 'activo'
-  ).all();
-  const categorias = await db.orm.public.Categoria.select('id', 'nome').all();
+  let utilizador: any = null;
+  let produtos: any[] = [];
+  let categorias: any[] = [];
 
-  const produtosMap = new Map(produtos.map((p) => [p.id, p]));
-  const categoriasMap = new Map(categorias.map((c) => [c.id, c.nome]));
+  // 1. Tentar primeiro via Prisma ORM
+  try {
+    utilizador = await db.orm.public.Utilizador.where({ id: utilizadorId }).first();
+    [produtos, categorias] = await Promise.all([
+      db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'stockActual', 'activo').all(),
+      db.orm.public.Categoria.select('id', 'nome').all(),
+    ]);
+  } catch {
+    // 2. Fallback Supabase REST
+    try {
+      const [uRes, pRes, cRes] = await Promise.all([
+        supabaseAdmin.from('Utilizador').select('id, nome').eq('id', utilizadorId).maybeSingle(),
+        supabaseAdmin.from('Produto').select('id, codigo, nome, categoriaId, precoCompra, stockActual, activo'),
+        supabaseAdmin.from('Categoria').select('id, nome'),
+      ]);
+      utilizador = uRes.data;
+      produtos = pRes.data ?? [];
+      categorias = cRes.data ?? [];
+    } catch {
+      // Ignorar
+    }
+  }
+
+  const produtosMap = new Map(produtos.map((p) => [Number(p.id), p]));
+  const categoriasMap = new Map(categorias.map((c) => [Number(c.id), c.nome]));
 
   const itemRecords: BlindCountItemRecord[] = [];
   let totalDivergencias = 0;
@@ -98,7 +141,7 @@ export async function submitBlindCount(
     const prod = produtosMap.get(item.produtoId);
     if (!prod) continue;
 
-    const stockSistema = prod.stockActual;
+    const stockSistema = Number(prod.stockActual) || 0;
     const divergencia = item.quantidadeFisica - stockSistema;
     const precoCompra = Number(prod.precoCompra) || 0;
     const impacto = divergencia * precoCompra;
@@ -176,7 +219,17 @@ export async function homologateBlindCount(id: string, adminId: number): Promise
     throw new Error('Esta contagem já foi homologada.');
   }
 
-  const admin = await db.orm.public.Utilizador.where({ id: adminId }).first();
+  let admin: any = null;
+  try {
+    admin = await db.orm.public.Utilizador.where({ id: adminId }).first();
+  } catch {
+    try {
+      const { data } = await supabaseAdmin.from('Utilizador').select('nome').eq('id', adminId).maybeSingle();
+      admin = data;
+    } catch {
+      // Ignorar
+    }
+  }
 
   // Apply adjustments to products with divergência
   for (const item of count.itens) {
