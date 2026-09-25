@@ -548,7 +548,7 @@ export default function VendasPage() {
   );
 
   return (
-    <div className="relative pb-24 xl:pb-0">
+    <div className="relative pb-24 xl:pb-0 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         {/* ========================================================================= */}
         {/* COLUNA CENTRAL: CATÁLOGO DE PRODUTOS                                      */}

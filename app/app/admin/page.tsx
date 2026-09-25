@@ -317,35 +317,35 @@ export default async function AdminPage({
             </span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-800/80 p-2 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-semibold text-[11px]">
-                <CashIcon size={14} className="text-neutral-900 dark:text-white" /> Dinheiro:
+            <div className="rounded-xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 p-3 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-semibold text-[11px]">
+                <CashIcon size={14} className="text-zinc-900 dark:text-white" /> Dinheiro:
               </span>
-              <span className="font-bold text-neutral-900 dark:text-white">
+              <span className="font-bold text-zinc-900 dark:text-white">
                 {Number(data.fechoCaixaHoje.dinheiro).toFixed(0)} MT
               </span>
             </div>
-            <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-800/80 p-2 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-semibold text-[11px]">
-                <PhoneIcon size={14} className="text-neutral-900 dark:text-white" /> M-Pesa:
+            <div className="rounded-xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 p-3 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-semibold text-[11px]">
+                <PhoneIcon size={14} className="text-zinc-900 dark:text-white" /> M-Pesa:
               </span>
-              <span className="font-bold text-neutral-900 dark:text-white">
+              <span className="font-bold text-zinc-900 dark:text-white">
                 {Number(data.fechoCaixaHoje.mpesa).toFixed(0)} MT
               </span>
             </div>
-            <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-800/80 p-2 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-semibold text-[11px]">
-                <PhoneIcon size={14} className="text-neutral-900 dark:text-white" /> e-Mola:
+            <div className="rounded-xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 p-3 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-semibold text-[11px]">
+                <PhoneIcon size={14} className="text-zinc-900 dark:text-white" /> e-Mola:
               </span>
-              <span className="font-bold text-neutral-900 dark:text-white">
+              <span className="font-bold text-zinc-900 dark:text-white">
                 {Number(data.fechoCaixaHoje.emola).toFixed(0)} MT
               </span>
             </div>
-            <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-800/80 p-2 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-semibold text-[11px]">
-                <CreditCardIcon size={14} className="text-neutral-900 dark:text-white" /> Cartão:
+            <div className="rounded-xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5 p-3 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-semibold text-[11px]">
+                <CreditCardIcon size={14} className="text-zinc-900 dark:text-white" /> Cartão:
               </span>
-              <span className="font-bold text-neutral-900 dark:text-white">
+              <span className="font-bold text-zinc-900 dark:text-white">
                 {Number(data.fechoCaixaHoje.cartao).toFixed(0)} MT
               </span>
             </div>

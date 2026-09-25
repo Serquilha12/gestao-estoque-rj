@@ -1,32 +1,17 @@
 /* ==========================================================================
-   Global Stylesheet - Take Away Rui Júnior (100% Vanilla CSS Puro)
-   Tokens, Componentes, Utilitários e Otimizações de Impressão Térmica
+   Global Stylesheet - Take Away Rui Júnior
+   Tailwind CSS v4 + Design Tokens + Thermal Print Styles
    ========================================================================== */
 
 @import "tailwindcss";
 @import "../src/styles/tokens.css";
-@import "../src/styles/components.css";
 
 @source "../src";
 @source "../app";
 
 @variant dark (&:where(.dark, .dark *));
 
-
-/* Base Reset & Box Sizing */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
-  tab-size: 4;
-}
-
+/* Base Application Styling */
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -48,18 +33,39 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--slate-300);
-  border-radius: var(--radius-full);
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--slate-400);
+  background: rgba(148, 163, 184, 0.6);
 }
 
 /* Accessible Focus Outline */
 :focus-visible {
-  outline: 2px solid var(--emerald-600);
+  outline: 2px solid currentColor;
   outline-offset: 2px;
+}
+
+/* Thermal Receipt & Print Optimizations */
+#thermal-receipt {
+  background-color: #ffffff;
+  color: #000000;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  aside, header, nav, button {
+    display: none !important;
+  }
+  #thermal-receipt {
+    display: block !important;
+    width: 80mm !important;
+  }
 }
 
 /* Reduced Motion Accessibility */
