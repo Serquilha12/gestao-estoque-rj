@@ -16,6 +16,8 @@ export interface ReceiptData {
   id: number;
   dataHora: string;
   atendenteNome?: string;
+  clienteNome?: string;
+  numeroMesa?: string;
   metodoPagamento: string;
   valorRecebido?: number;
   troco?: number;
@@ -123,9 +125,21 @@ export function ReceiptModal({ receipt, isOpen, onClose, onNewSale }: ReceiptMod
                 <span className="font-bold text-slate-900">#{receipt.id}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Data/Hora:</span>
-                <span className="text-slate-700">{receipt.dataHora}</span>
+                <span className="text-slate-500">Data/Hora (Maputo):</span>
+                <span className="text-slate-700 font-semibold">{receipt.dataHora}</span>
               </div>
+              {receipt.numeroMesa && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Mesa / Local:</span>
+                  <span className="font-bold text-indigo-700">{receipt.numeroMesa}</span>
+                </div>
+              )}
+              {receipt.clienteNome && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Cliente:</span>
+                  <span className="font-semibold text-slate-800">{receipt.clienteNome}</span>
+                </div>
+              )}
               {receipt.atendenteNome && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">Operador:</span>
@@ -202,7 +216,7 @@ export function ReceiptModal({ receipt, isOpen, onClose, onNewSale }: ReceiptMod
             <div className="pt-4 text-center space-y-1 text-[10px] text-slate-500">
               <p className="font-bold text-slate-700">OBRIGADO PELA PREFERÊNCIA!</p>
               <p>Conserve este talão para qualquer esclarecimento.</p>
-              <p className="text-[9px] text-slate-400 pt-1">TK Rui Júnior • Sistema de Gestão Comercial</p>
+              <p className="text-[9px] text-slate-400 pt-1">Take Away Rui Júnior • Sistema de Gestão Comercial</p>
             </div>
           </div>
         </div>

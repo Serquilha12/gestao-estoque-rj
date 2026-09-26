@@ -45,14 +45,11 @@ export function AppHeader({ user, onOpenMobileMenu }: AppHeaderProps) {
         {/* PDV Quick Action */}
         <Link
           href="/app/vendas"
-          className="hidden sm:inline-flex items-center gap-2 rounded-full bg-black dark:bg-white text-white dark:text-black px-3.5 py-1.5 text-xs font-semibold shadow-xs hover:opacity-90 active:scale-98 transition"
+          className="hidden sm:inline-flex items-center gap-2 rounded-full bg-black text-white px-3.5 py-1.5 text-xs font-semibold shadow-xs hover:opacity-90 active:scale-98 transition"
         >
           <PlusIcon size={13} />
           <span>Nova Venda</span>
         </Link>
-
-        {/* Theme Toggle */}
-        <ThemeToggle />
 
         {/* User Avatar */}
         <Link

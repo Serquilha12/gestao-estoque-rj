@@ -6,6 +6,7 @@ import { Card } from '@/src/components/ui/card';
 import { Badge } from '@/src/components/ui/badge';
 import { ArrowLeftIcon, CheckCircleIcon, PlusIcon } from '@/src/components/ui/icons';
 import { PrintReceiptButton } from '@/src/components/sales/print-button';
+import { formatDateTimeMaputo } from '@/src/lib/date';
 
 export default async function VendaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireRole(['ADMINISTRADOR', 'ATENDENTE'], '/login');
@@ -56,7 +57,7 @@ export default async function VendaDetalhePage({ params }: { params: Promise<{ i
                 <Badge variant="success">Concluída</Badge>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Emitido em {new Date(venda.criadoEm).toLocaleString('pt-PT')}
+                Emitido em {formatDateTimeMaputo(venda.criadoEm)} (Maputo)
               </p>
             </div>
           </div>
@@ -80,9 +81,9 @@ export default async function VendaDetalhePage({ params }: { params: Promise<{ i
             <p className="mt-1 font-semibold text-slate-900 text-sm">{venda.utilizadorNome}</p>
           </div>
           <div>
-            <span className="font-bold text-slate-400 uppercase tracking-wider">Data / Hora do Registo</span>
+            <span className="font-bold text-slate-400 uppercase tracking-wider">Data / Hora de Maputo</span>
             <p className="mt-1 font-medium text-slate-700">
-              {new Date(venda.criadoEm).toLocaleString('pt-PT')}
+              {formatDateTimeMaputo(venda.criadoEm)}
             </p>
           </div>
         </div>

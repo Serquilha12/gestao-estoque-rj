@@ -11,6 +11,7 @@ import {
   EditIcon,
   FilterIcon,
 } from '@/src/components/ui/icons';
+import { formatDateMaputo } from '@/src/lib/date';
 
 export default async function AdminCategoriasPage({
   searchParams,
@@ -141,7 +142,7 @@ export default async function AdminCategoriasPage({
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-slate-500">
-                        {new Date(item.criadoEm).toLocaleDateString('pt-PT')}
+                        {formatDateMaputo(item.criadoEm)}
                       </td>
                       {isAdmin && (
                         <td className="px-4 py-3 text-center">

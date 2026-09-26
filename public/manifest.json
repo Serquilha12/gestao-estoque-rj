@@ -1,0 +1,20 @@
+{
+  "name": "Take Away Rui Júnior - Gestão & POS",
+  "short_name": "TK Rui Júnior",
+  "description": "Sistema de Gestão Comercial, Ponto de Venda, Comandas e Inventário",
+  "start_url": "/app/vendas",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F5F7",
+  "theme_color": "#0F172A",
+  "categories": ["business", "productivity", "food"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

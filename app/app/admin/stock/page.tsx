@@ -14,6 +14,7 @@ import {
   EditIcon,
   FilterIcon,
 } from '@/src/components/ui/icons';
+import { formatDateTimeMaputo } from '@/src/lib/date';
 
 export default async function AdminStockPage({
   searchParams,
@@ -383,8 +384,8 @@ export default async function AdminStockPage({
 
                     return (
                       <tr key={mov.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-4 py-3 text-slate-500">
-                          {new Date(mov.criadoEm).toLocaleString('pt-PT')}
+                        <td className="px-4 py-3 text-slate-500 font-medium">
+                          {formatDateTimeMaputo(mov.criadoEm)}
                         </td>
                         <td className="px-4 py-3">
                           <p className="font-bold text-slate-900">{mov.produtoNome}</p>

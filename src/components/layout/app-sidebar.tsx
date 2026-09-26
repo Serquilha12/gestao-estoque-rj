@@ -117,12 +117,7 @@ export function AppSidebar({ user, onItemClick, className = '' }: AppSidebarProp
       </div>
 
       {/* Footer Profile & Controls */}
-      <div className="p-4 border-t border-black/5 dark:border-white/5 space-y-3">
-        <div className="flex items-center justify-between px-2">
-          <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Tema</span>
-          <ThemeToggle />
-        </div>
-
+      <div className="p-4 border-t border-black/5 dark:border-white/5">
         <div className="flex items-center justify-between p-2 rounded-2xl bg-[#F8F9FA] dark:bg-[#1A202C] border border-black/5 dark:border-white/5">
           <Link
             href="/app/perfil"
