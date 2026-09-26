@@ -22,15 +22,20 @@ export function FormField({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {label && (
-        <label htmlFor={id} className="block text-xs font-semibold text-slate-700 tracking-wide">
+        <label
+          htmlFor={id}
+          className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 tracking-wide"
+        >
           {label} {required && <span className="text-rose-500">*</span>}
         </label>
       )}
       {children}
       {error ? (
-        <p className="text-xs font-medium text-rose-600 flex items-center gap-1 mt-1">{error}</p>
+        <p className="text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-1">
+          {error}
+        </p>
       ) : helperText ? (
-        <p className="text-xs text-slate-500 mt-1">{helperText}</p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{helperText}</p>
       ) : null}
     </div>
   );
@@ -46,19 +51,25 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className = '', error, leftIcon, rightIcon, ...props }, ref) => {
     return (
       <div className="relative flex items-center w-full">
-        {leftIcon && <div className="absolute left-3.5 text-slate-400 pointer-events-none">{leftIcon}</div>}
+        {leftIcon && (
+          <div className="absolute left-3.5 text-zinc-400 dark:text-zinc-500 pointer-events-none">
+            {leftIcon}
+          </div>
+        )}
         <input
           ref={ref}
-          className={`w-full rounded-xl border bg-slate-50/70 text-slate-900 text-sm font-medium transition-all duration-150 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60 ${
+          className={`w-full rounded-xl border bg-[#F8F9FA] dark:bg-[#1A202C] text-zinc-900 dark:text-white text-xs sm:text-sm font-medium transition-all duration-150 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-[#121824] focus:outline-hidden focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 ${
             leftIcon ? 'pl-10' : 'pl-3.5'
           } ${rightIcon ? 'pr-10' : 'pr-3.5'} py-2.5 ${
             error
-              ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20'
-              : 'border-slate-300/90 focus:border-emerald-600 focus:ring-emerald-600/15'
+              ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20'
+              : 'border-black/10 dark:border-white/10 focus:border-black dark:focus:border-white focus:ring-black dark:focus:ring-white'
           } ${className}`}
           {...props}
         />
-        {rightIcon && <div className="absolute right-3.5 text-slate-400">{rightIcon}</div>}
+        {rightIcon && (
+          <div className="absolute right-3.5 text-zinc-400 dark:text-zinc-500">{rightIcon}</div>
+        )}
       </div>
     );
   }
@@ -74,10 +85,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <select
         ref={ref}
-        className={`w-full rounded-xl border bg-slate-50/70 text-slate-900 text-sm font-medium transition-all duration-150 focus:bg-white focus:outline-hidden focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60 px-3.5 py-2.5 ${
+        className={`w-full rounded-xl border bg-[#F8F9FA] dark:bg-[#1A202C] text-zinc-900 dark:text-white text-xs sm:text-sm font-medium transition-all duration-150 focus:bg-white dark:focus:bg-[#121824] focus:outline-hidden focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 px-3.5 py-2.5 ${
           error
-            ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20'
-            : 'border-slate-300/90 focus:border-emerald-600 focus:ring-emerald-600/15'
+            ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20'
+            : 'border-black/10 dark:border-white/10 focus:border-black dark:focus:border-white focus:ring-black dark:focus:ring-white'
         } ${className}`}
         {...props}
       >
@@ -97,10 +108,10 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <textarea
         ref={ref}
-        className={`w-full rounded-xl border bg-slate-50/70 text-slate-900 text-sm font-medium transition-all duration-150 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60 p-3.5 ${
+        className={`w-full rounded-xl border bg-[#F8F9FA] dark:bg-[#1A202C] text-zinc-900 dark:text-white text-xs sm:text-sm font-medium transition-all duration-150 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-[#121824] focus:outline-hidden focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 px-3.5 py-2.5 ${
           error
-            ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20'
-            : 'border-slate-300/90 focus:border-emerald-600 focus:ring-emerald-600/15'
+            ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20'
+            : 'border-black/10 dark:border-white/10 focus:border-black dark:focus:border-white focus:ring-black dark:focus:ring-white'
         } ${className}`}
         {...props}
       />
