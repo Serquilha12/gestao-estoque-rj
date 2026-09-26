@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { db } from '@/src/prisma/db';
+import { db, canUsePrisma, reportPrismaSuccess, reportPrismaFailure } from '@/src/prisma/db';
 import { supabaseAdmin } from '@/src/lib/supabase/admin';
 import { categoryCreateSchema, categoryUpdateSchema, productCreateSchema, productUpdateSchema } from '@/src/lib/validators';
 
@@ -31,9 +31,16 @@ export async function getCategories(options?: { search?: string; activo?: boolea
   const searchText = (options?.search ?? '').trim();
   let allCategories: Array<{ id: number; nome: string; descricao: string | null; activo: boolean; criadoEm: string }> = [];
 
-  try {
-    allCategories = await db.orm.public.Categoria.select('id', 'nome', 'descricao', 'activo', 'criadoEm').orderBy((c) => c.nome.asc()).all();
-  } catch {
+  if (canUsePrisma()) {
+    try {
+      allCategories = await db.orm.public.Categoria.select('id', 'nome', 'descricao', 'activo', 'criadoEm').orderBy((c) => c.nome.asc()).all();
+      reportPrismaSuccess();
+    } catch (err) {
+      reportPrismaFailure(err);
+    }
+  }
+
+  if (allCategories.length === 0 && !canUsePrisma()) {
     try {
       const { data } = await supabaseAdmin.from('Categoria').select('id, nome, descricao, activo, criadoEm').order('nome', { ascending: true });
       allCategories = (data ?? []).map((c) => ({
@@ -250,12 +257,19 @@ export async function getProducts(options?: { search?: string; categoriaId?: num
   let allProducts: Array<{ id: number; codigo: string; nome: string; categoriaId: number; precoCompra: string; precoVenda: string; stockActual: number; stockMinimo: number; activo: boolean; criadoEm: string }> = [];
   let allCategories: Array<{ id: number; nome: string }> = [];
 
-  try {
-    [allProducts, allCategories] = await Promise.all([
-      db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'precoVenda', 'stockActual', 'stockMinimo', 'activo', 'criadoEm').orderBy((p) => p.nome.asc()).all(),
-      db.orm.public.Categoria.select('id', 'nome').all(),
-    ]);
-  } catch {
+  if (canUsePrisma()) {
+    try {
+      [allProducts, allCategories] = await Promise.all([
+        db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'precoVenda', 'stockActual', 'stockMinimo', 'activo', 'criadoEm').orderBy((p) => p.nome.asc()).all(),
+        db.orm.public.Categoria.select('id', 'nome').all(),
+      ]);
+      reportPrismaSuccess();
+    } catch (err) {
+      reportPrismaFailure(err);
+    }
+  }
+
+  if (allProducts.length === 0 && !canUsePrisma()) {
     try {
       const [pRes, cRes] = await Promise.all([
         supabaseAdmin.from('Produto').select('id, codigo, nome, categoriaId, precoCompra, precoVenda, stockActual, stockMinimo, activo, criadoEm').order('nome', { ascending: true }),

@@ -7,7 +7,8 @@ import type { NextResponse } from 'next/server';
 import { betterAuth } from 'better-auth';
 import { Pool } from 'pg';
 
-import { db } from '@/src/prisma/db';
+import { db, canUsePrisma, reportPrismaSuccess, reportPrismaFailure } from '@/src/prisma/db';
+import { supabaseAdmin } from '@/src/lib/supabase/admin';
 
 const databaseUrl =
   process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/tk_vendas';
@@ -131,25 +132,27 @@ export async function clearSessionCookie() {
 }
 
 export async function findUserByEmail(email: string): Promise<SessionUser | null> {
-  // 1. Prisma ORM
-  try {
-    const user = await db.orm.public.Utilizador.where({ email }).first();
-    if (user && user.activo) {
-      return {
-        id: user.id,
-        nome: user.nome,
-        email: user.email,
-        perfil: user.perfil,
-        activo: user.activo,
-      };
+  // 1. Prisma ORM (somente se disponível e funcional)
+  if (canUsePrisma()) {
+    try {
+      const user = await db.orm.public.Utilizador.where({ email }).first();
+      if (user && user.activo) {
+        reportPrismaSuccess();
+        return {
+          id: user.id,
+          nome: user.nome,
+          email: user.email,
+          perfil: user.perfil,
+          activo: user.activo,
+        };
+      }
+    } catch (err) {
+      reportPrismaFailure(err);
     }
-  } catch {
-    // Falha silenciosa para fallback
   }
 
-  // 2. Supabase REST fallback
+  // 2. Supabase REST fallback direto (rápido, ~30ms)
   try {
-    const { supabaseAdmin } = await import('@/src/lib/supabase/admin');
     const { data } = await supabaseAdmin
       .from('Utilizador')
       .select('id, nome, email, perfil, activo')
@@ -173,25 +176,27 @@ export async function findUserByEmail(email: string): Promise<SessionUser | null
 }
 
 export async function findUserById(id: number): Promise<SessionUser | null> {
-  // 1. Prisma ORM
-  try {
-    const user = await db.orm.public.Utilizador.where({ id }).first();
-    if (user && user.activo) {
-      return {
-        id: user.id,
-        nome: user.nome,
-        email: user.email,
-        perfil: user.perfil,
-        activo: user.activo,
-      };
+  // 1. Prisma ORM (somente se disponível e funcional)
+  if (canUsePrisma()) {
+    try {
+      const user = await db.orm.public.Utilizador.where({ id }).first();
+      if (user && user.activo) {
+        reportPrismaSuccess();
+        return {
+          id: user.id,
+          nome: user.nome,
+          email: user.email,
+          perfil: user.perfil,
+          activo: user.activo,
+        };
+      }
+    } catch (err) {
+      reportPrismaFailure(err);
     }
-  } catch {
-    // Falha silenciosa para fallback
   }
 
-  // 2. Supabase REST fallback
+  // 2. Supabase REST fallback direto (rápido, ~30ms)
   try {
-    const { supabaseAdmin } = await import('@/src/lib/supabase/admin');
     const { data } = await supabaseAdmin
       .from('Utilizador')
       .select('id, nome, email, perfil, activo')

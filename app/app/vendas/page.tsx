@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/src/components/ui/toast';
 import { CheckoutModal, type CheckoutPayload } from '@/src/components/sales/checkout-modal';
@@ -60,7 +60,24 @@ export default function VendasPage() {
   const [pesquisa, setPesquisa] = useState('');
   const [categoriaAtiva, setCategoriaAtiva] = useState<number | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [todosProdutos, setTodosProdutos] = useState<Produto[]>([]);
+
+  // Filtro instantâneo em memória: 0ms de delay ao digitar ou clicar em categorias
+  const produtos = useMemo(() => {
+    let lista = todosProdutos;
+    if (categoriaAtiva !== null) {
+      lista = lista.filter((p) => p.categoriaId === categoriaAtiva);
+    }
+    if (pesquisa.trim()) {
+      const q = pesquisa.trim().toLowerCase();
+      lista = lista.filter(
+        (p) =>
+          p.nome.toLowerCase().includes(q) ||
+          p.codigo.toLowerCase().includes(q)
+      );
+    }
+    return lista;
+  }, [todosProdutos, categoriaAtiva, pesquisa]);
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
   const [tipoPedido, setTipoPedido] = useState<OrderType>('Balcão');
   const [mensagemErro, setMensagemErro] = useState('');
@@ -165,41 +182,36 @@ export default function VendasPage() {
     }
   }, [toast]);
 
-  // Fetch active categories
-  useEffect(() => {
-    fetch('/api/admin/categorias?estado=activo')
-      .then((res) => res.json())
-      .then((data) => {
-        setCategorias(data.categorias ?? []);
-        setACarregarCategorias(false);
-      })
-      .catch(() => {
-        setACarregarCategorias(false);
-      });
+  // Carregamento inicial em lote e paralelo do catálogo (0ms debounce)
+  const carregarCatalogo = useCallback(async () => {
+    setACarregarProdutos(true);
+    setACarregarCategorias(true);
+
+    try {
+      const [catRes, prodRes] = await Promise.all([
+        fetch('/api/admin/categorias?estado=activo'),
+        fetch('/api/admin/produtos?estado=activo'),
+      ]);
+
+      const [catData, prodData] = await Promise.all([
+        catRes.json().catch(() => ({})),
+        prodRes.json().catch(() => ({})),
+      ]);
+
+      setCategorias(catData.categorias ?? []);
+      setTodosProdutos(prodData.produtos ?? []);
+    } catch {
+      setCategorias([]);
+      setTodosProdutos([]);
+    } finally {
+      setACarregarCategorias(false);
+      setACarregarProdutos(false);
+    }
   }, []);
 
-  // Fetch active products with debounce
   useEffect(() => {
-    setACarregarProdutos(true);
-    const timeout = setTimeout(() => {
-      const params = new URLSearchParams({ estado: 'activo' });
-      if (pesquisa.trim()) params.set('pesquisa', pesquisa.trim());
-      if (categoriaAtiva !== null) params.set('categoriaId', String(categoriaAtiva));
-
-      fetch(`/api/admin/produtos?${params.toString()}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setProdutos(data.produtos ?? []);
-          setACarregarProdutos(false);
-        })
-        .catch(() => {
-          setProdutos([]);
-          setACarregarProdutos(false);
-        });
-    }, 200);
-
-    return () => clearTimeout(timeout);
-  }, [pesquisa, categoriaAtiva]);
+    carregarCatalogo();
+  }, [carregarCatalogo]);
 
   // Fetch open comandas
   const carregarComandas = useCallback(() => {
@@ -442,7 +454,7 @@ export default function VendasPage() {
         );
 
         // Atualizar estoque na tela local
-        setProdutos((prev) =>
+        setTodosProdutos((prev) =>
           prev.map((prod) => {
             const noCarrinho = carrinho.find((c) => c.id === prod.id);
             if (noCarrinho) {
@@ -498,7 +510,7 @@ export default function VendasPage() {
         toast.success(`Venda #${data.venda.id} registada com sucesso!`, 'Venda Concluída');
 
         // Atualizar estoque local
-        setProdutos((prev) =>
+        setTodosProdutos((prev) =>
           prev.map((prod) => {
             const noCarrinho = carrinho.find((c) => c.id === prod.id);
             if (noCarrinho) {
@@ -550,7 +562,7 @@ export default function VendasPage() {
         }
 
         // Deduzir localmente no estado de produtos
-        setProdutos((prev) =>
+        setTodosProdutos((prev) =>
           prev.map((prod) => {
             const noCarrinho = carrinho.find((c) => c.id === prod.id);
             if (noCarrinho) {
@@ -605,7 +617,7 @@ export default function VendasPage() {
       }
 
       // Deduzir localmente no estado de produtos
-      setProdutos((prev) =>
+      setTodosProdutos((prev) =>
         prev.map((prod) => {
           const noCarrinho = carrinho.find((c) => c.id === prod.id);
           if (noCarrinho) {
@@ -672,7 +684,7 @@ export default function VendasPage() {
       const params = new URLSearchParams({ estado: 'activo' });
       fetch(`/api/admin/produtos?${params.toString()}`)
         .then((r) => r.json())
-        .then((d) => setProdutos(d.produtos ?? []));
+        .then((d) => setTodosProdutos(d.produtos ?? []));
     } catch {
       toast.error('Erro ao cancelar comanda.');
     }
@@ -1644,7 +1656,7 @@ export default function VendasPage() {
           const params = new URLSearchParams({ estado: 'activo' });
           fetch(`/api/admin/produtos?${params.toString()}`)
             .then((res) => res.json())
-            .then((data) => setProdutos(data.produtos ?? []));
+            .then((data) => setTodosProdutos(data.produtos ?? []));
         }}
       />
 

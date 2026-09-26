@@ -1,27 +1,33 @@
 import 'server-only';
 
-import { db } from '@/src/prisma/db';
+import { db, canUsePrisma, reportPrismaSuccess, reportPrismaFailure } from '@/src/prisma/db';
 import { supabaseAdmin } from '@/src/lib/supabase/admin';
 import { hashPassword } from '@/src/lib/password';
 import { userCreateSchema, userUpdateSchema } from '@/src/lib/validators';
 
 export async function getUsers() {
-  try {
-    return await db.orm.public.Utilizador.select('id', 'nome', 'email', 'perfil', 'activo', 'criadoEm').orderBy((u) => u.nome.asc()).all();
-  } catch {
+  if (canUsePrisma()) {
     try {
-      const { data } = await supabaseAdmin.from('Utilizador').select('id, nome, email, perfil, activo, criadoEm').order('nome', { ascending: true });
-      return (data ?? []).map((u) => ({
-        id: Number(u.id),
-        nome: String(u.nome),
-        email: String(u.email),
-        perfil: u.perfil as 'ADMINISTRADOR' | 'ATENDENTE',
-        activo: Boolean(u.activo),
-        criadoEm: String(u.criadoEm),
-      }));
-    } catch {
-      return [];
+      const users = await db.orm.public.Utilizador.select('id', 'nome', 'email', 'perfil', 'activo', 'criadoEm').orderBy((u) => u.nome.asc()).all();
+      reportPrismaSuccess();
+      return users;
+    } catch (err) {
+      reportPrismaFailure(err);
     }
+  }
+
+  try {
+    const { data } = await supabaseAdmin.from('Utilizador').select('id, nome, email, perfil, activo, criadoEm').order('nome', { ascending: true });
+    return (data ?? []).map((u) => ({
+      id: Number(u.id),
+      nome: String(u.nome),
+      email: String(u.email),
+      perfil: u.perfil as 'ADMINISTRADOR' | 'ATENDENTE',
+      activo: Boolean(u.activo),
+      criadoEm: String(u.criadoEm),
+    }));
+  } catch {
+    return [];
   }
 }
 

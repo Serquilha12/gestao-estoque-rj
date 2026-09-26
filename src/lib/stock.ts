@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { db } from '@/src/prisma/db';
+import { db, canUsePrisma, reportPrismaSuccess, reportPrismaFailure } from '@/src/prisma/db';
 import { supabaseAdmin } from '@/src/lib/supabase/admin';
 import {
   stockAdjustmentSchema,
@@ -32,46 +32,52 @@ export async function recordStockEntry(utilizadorId: number, input: StockEntryIn
     throw new Error(parsed.error.issues[0]?.message ?? 'Dados de entrada de stock inválidos.');
   }
 
-  // 1. Tentar primeiro via Prisma ORM
-  try {
-    return await db.transaction(async (tx) => {
-      const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
-      if (!produto) {
-        throw new Error('Produto não encontrado.');
-      }
-      if (!produto.activo) {
-        throw new Error(`O produto ${produto.nome} está inactivo.`);
-      }
+  // 1. Tentar primeiro via Prisma ORM (se disponível)
+  if (canUsePrisma()) {
+    try {
+      const res = await db.transaction(async (tx) => {
+        const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
+        if (!produto) {
+          throw new Error('Produto não encontrado.');
+        }
+        if (!produto.activo) {
+          throw new Error(`O produto ${produto.nome} está inactivo.`);
+        }
 
-      const stockAnterior = produto.stockActual;
-      const stockPosterior = stockAnterior + parsed.data.quantidade;
+        const stockAnterior = produto.stockActual;
+        const stockPosterior = stockAnterior + parsed.data.quantidade;
 
-      await tx.orm.public.Produto.where({ id: produto.id }).update({
-        stockActual: stockPosterior,
-      });
-
-      const movimento = await tx.orm.public.MovimentoStock.create({
-        produtoId: produto.id,
-        utilizadorId,
-        tipo: 'ENTRADA',
-        quantidade: parsed.data.quantidade,
-        stockAnterior,
-        stockPosterior,
-        motivo: parsed.data.motivo ?? 'Entrada manual de stock',
-      });
-
-      return {
-        movimento,
-        produto: {
-          id: produto.id,
+        await tx.orm.public.Produto.where({ id: produto.id }).update({
           stockActual: stockPosterior,
-        },
-      };
-    });
-  } catch (err) {
-    if (err instanceof Error && (err.message.includes('não encontrado') || err.message.includes('inactivo'))) {
-      throw err;
+        });
+
+        const movimento = await tx.orm.public.MovimentoStock.create({
+          produtoId: produto.id,
+          utilizadorId,
+          tipo: 'ENTRADA',
+          quantidade: parsed.data.quantidade,
+          stockAnterior,
+          stockPosterior,
+          motivo: parsed.data.motivo ?? 'Entrada manual de stock',
+        });
+
+        return {
+          movimento,
+          produto: {
+            id: produto.id,
+            stockActual: stockPosterior,
+          },
+        };
+      });
+      reportPrismaSuccess();
+      return res;
+    } catch (err) {
+      if (err instanceof Error && (err.message.includes('não encontrado') || err.message.includes('inactivo'))) {
+        throw err;
+      }
+      reportPrismaFailure(err);
     }
+  }
 
     // 2. Fallback Supabase REST
     const { data: prodData } = await supabaseAdmin
@@ -112,7 +118,6 @@ export async function recordStockEntry(utilizadorId: number, input: StockEntryIn
       },
     };
   }
-}
 
 export async function recordStockExit(utilizadorId: number, input: StockExitInput) {
   const parsed = stockExitSchema.safeParse(input);
@@ -120,61 +125,67 @@ export async function recordStockExit(utilizadorId: number, input: StockExitInpu
     throw new Error(parsed.error.issues[0]?.message ?? 'Dados de saída de stock inválidos.');
   }
 
-  // 1. Tentar primeiro via Prisma ORM
-  try {
-    return await db.transaction(async (tx) => {
-      const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
-      if (!produto) {
-        throw new Error('Produto não encontrado.');
-      }
-      if (!produto.activo) {
-        throw new Error(`O produto ${produto.nome} está inactivo.`);
-      }
-      if (produto.stockActual < parsed.data.quantidade) {
-        throw new Error(`Stock insuficiente para o produto ${produto.nome}.`);
-      }
+  // 1. Tentar primeiro via Prisma ORM (se disponível)
+  if (canUsePrisma()) {
+    try {
+      const res = await db.transaction(async (tx) => {
+        const produto = await tx.orm.public.Produto.where({ id: parsed.data.produtoId }).first();
+        if (!produto) {
+          throw new Error('Produto não encontrado.');
+        }
+        if (!produto.activo) {
+          throw new Error(`O produto ${produto.nome} está inactivo.`);
+        }
+        if (produto.stockActual < parsed.data.quantidade) {
+          throw new Error(`Stock insuficiente para o produto ${produto.nome}.`);
+        }
 
-      const stockAnterior = produto.stockActual;
-      const stockPosterior = stockAnterior - parsed.data.quantidade;
+        const stockAnterior = produto.stockActual;
+        const stockPosterior = stockAnterior - parsed.data.quantidade;
 
-      const updatePlan = tx.sql.public.produto
-        .update((fields, fns) => ({
-          stockActual: fns.raw`${fields.stockActual} - ${parsed.data.quantidade}`.returns('pg/int4@1'),
-        }))
-        .where((fields, fns) => fns.and(
-          fns.eq(fields.id, produto.id),
-          fns.gte(fields.stockActual, parsed.data.quantidade),
-        ))
-        .returning('id', 'stockActual')
-        .build();
-      const updated = await tx.query(updatePlan);
+        const updatePlan = tx.sql.public.produto
+          .update((fields, fns) => ({
+            stockActual: fns.raw`${fields.stockActual} - ${parsed.data.quantidade}`.returns('pg/int4@1'),
+          }))
+          .where((fields, fns) => fns.and(
+            fns.eq(fields.id, produto.id),
+            fns.gte(fields.stockActual, parsed.data.quantidade),
+          ))
+          .returning('id', 'stockActual')
+          .build();
+        const updated = await tx.query(updatePlan);
 
-      if (updated.length !== 1) {
-        throw new Error('Stock insuficiente para concluir a saída.');
-      }
+        if (updated.length !== 1) {
+          throw new Error('Stock insuficiente para concluir a saída.');
+        }
 
-      const movimento = await tx.orm.public.MovimentoStock.create({
-        produtoId: produto.id,
-        utilizadorId,
-        tipo: 'SAIDA',
-        quantidade: parsed.data.quantidade,
-        stockAnterior,
-        stockPosterior,
-        motivo: parsed.data.motivo ?? 'Saída manual de stock',
+        const movimento = await tx.orm.public.MovimentoStock.create({
+          produtoId: produto.id,
+          utilizadorId,
+          tipo: 'SAIDA',
+          quantidade: parsed.data.quantidade,
+          stockAnterior,
+          stockPosterior,
+          motivo: parsed.data.motivo ?? 'Saída manual de stock',
+        });
+
+        return {
+          movimento,
+          produto: {
+            id: produto.id,
+            stockActual: stockPosterior,
+          },
+        };
       });
-
-      return {
-        movimento,
-        produto: {
-          id: produto.id,
-          stockActual: stockPosterior,
-        },
-      };
-    });
-  } catch (err) {
-    if (err instanceof Error && (err.message.includes('não encontrado') || err.message.includes('inactivo') || err.message.includes('insuficiente'))) {
-      throw err;
+      reportPrismaSuccess();
+      return res;
+    } catch (err) {
+      if (err instanceof Error && (err.message.includes('não encontrado') || err.message.includes('inactivo') || err.message.includes('insuficiente'))) {
+        throw err;
+      }
+      reportPrismaFailure(err);
     }
+  }
 
     // 2. Fallback Supabase REST
     const { data: prodData } = await supabaseAdmin
@@ -217,7 +228,6 @@ export async function recordStockExit(utilizadorId: number, input: StockExitInpu
       },
     };
   }
-}
 
 export async function recordStockAdjustment(utilizadorId: number, input: StockAdjustmentInput) {
   const parsed = stockAdjustmentSchema.safeParse(input);
@@ -320,19 +330,26 @@ export async function getStockMovements(filters?: {
   let produtos: any[] = [];
   let utilizadores: any[] = [];
 
-  // 1. Tentar primeiro via Prisma ORM
-  try {
-    rawMovimentos = await db.orm.public.MovimentoStock
-      .select('id', 'produtoId', 'utilizadorId', 'tipo', 'quantidade', 'stockAnterior', 'stockPosterior', 'motivo', 'criadoEm')
-      .orderBy((m) => m.criadoEm.desc())
-      .all();
+  // 1. Tentar primeiro via Prisma ORM (se disponível)
+  if (canUsePrisma()) {
+    try {
+      rawMovimentos = await db.orm.public.MovimentoStock
+        .select('id', 'produtoId', 'utilizadorId', 'tipo', 'quantidade', 'stockAnterior', 'stockPosterior', 'motivo', 'criadoEm')
+        .orderBy((m) => m.criadoEm.desc())
+        .all();
 
-    [produtos, utilizadores] = await Promise.all([
-      db.orm.public.Produto.select('id', 'codigo', 'nome').all(),
-      db.orm.public.Utilizador.select('id', 'nome').all(),
-    ]);
-  } catch {
-    // 2. Fallback Supabase REST
+      [produtos, utilizadores] = await Promise.all([
+        db.orm.public.Produto.select('id', 'codigo', 'nome').all(),
+        db.orm.public.Utilizador.select('id', 'nome').all(),
+      ]);
+      reportPrismaSuccess();
+    } catch (err) {
+      reportPrismaFailure(err);
+    }
+  }
+
+  // 2. Fallback Supabase REST direto
+  if (rawMovimentos.length === 0 && !canUsePrisma()) {
     try {
       const [mRes, pRes, uRes] = await Promise.all([
         supabaseAdmin.from('MovimentoStock').select('*').order('criadoEm', { ascending: false }),

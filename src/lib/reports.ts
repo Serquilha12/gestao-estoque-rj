@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { db } from '@/src/prisma/db';
+import { db, canUsePrisma, reportPrismaSuccess, reportPrismaFailure } from '@/src/prisma/db';
 import { supabaseAdmin } from '@/src/lib/supabase/admin';
 
 export type PeriodFilter = 'hoje' | '7d' | '30d' | 'mes' | 'todos' | 'personalizado';
@@ -146,32 +146,35 @@ type RawData = {
 };
 
 async function fetchRawData(): Promise<RawData> {
-  // 1. Tenta consulta direta via Prisma ORM
-  try {
-    const [vendas, itensVenda, produtos, categorias, movimentosRaw, utilizadores] = await Promise.all([
-      db.orm.public.Venda.select('id', 'utilizadorId', 'total', 'criadoEm').orderBy((v) => v.criadoEm.desc()).all(),
-      db.orm.public.ItemVenda.select('id', 'vendaId', 'produtoId', 'quantidade', 'subtotal').all(),
-      db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'precoVenda', 'stockActual', 'stockMinimo', 'activo').all(),
-      db.orm.public.Categoria.select('id', 'nome', 'activo').all(),
-      db.orm.public.MovimentoStock.select('id', 'produtoId', 'utilizadorId', 'tipo', 'quantidade', 'stockAnterior', 'stockPosterior', 'motivo', 'criadoEm')
-        .orderBy((m) => m.criadoEm.desc())
-        .all(),
-      db.orm.public.Utilizador.select('id', 'nome').all(),
-    ]);
+  // 1. Tenta consulta direta via Prisma ORM (somente se habilitado)
+  if (canUsePrisma()) {
+    try {
+      const [vendas, itensVenda, produtos, categorias, movimentosRaw, utilizadores] = await Promise.all([
+        db.orm.public.Venda.select('id', 'utilizadorId', 'total', 'criadoEm').orderBy((v) => v.criadoEm.desc()).all(),
+        db.orm.public.ItemVenda.select('id', 'vendaId', 'produtoId', 'quantidade', 'subtotal').all(),
+        db.orm.public.Produto.select('id', 'codigo', 'nome', 'categoriaId', 'precoCompra', 'precoVenda', 'stockActual', 'stockMinimo', 'activo').all(),
+        db.orm.public.Categoria.select('id', 'nome', 'activo').all(),
+        db.orm.public.MovimentoStock.select('id', 'produtoId', 'utilizadorId', 'tipo', 'quantidade', 'stockAnterior', 'stockPosterior', 'motivo', 'criadoEm')
+          .orderBy((m) => m.criadoEm.desc())
+          .all(),
+        db.orm.public.Utilizador.select('id', 'nome').all(),
+      ]);
 
-    return {
-      vendas: vendas.map((v) => ({ id: v.id, utilizadorId: v.utilizadorId, total: String(v.total), criadoEm: String(v.criadoEm) })),
-      itensVenda: itensVenda.map((i) => ({ id: i.id, vendaId: i.vendaId, produtoId: i.produtoId, quantidade: i.quantidade, subtotal: String(i.subtotal) })),
-      produtos: produtos.map((p) => ({ id: p.id, codigo: p.codigo, nome: p.nome, categoriaId: p.categoriaId, precoCompra: String(p.precoCompra), precoVenda: String(p.precoVenda), stockActual: p.stockActual, stockMinimo: p.stockMinimo, activo: p.activo })),
-      categorias: categorias.map((c) => ({ id: c.id, nome: c.nome, activo: c.activo ?? true })),
-      movimentosRaw: movimentosRaw.map((m) => ({ id: m.id, produtoId: m.produtoId, utilizadorId: m.utilizadorId, tipo: String(m.tipo), quantidade: m.quantidade, stockAnterior: m.stockAnterior, stockPosterior: m.stockPosterior, motivo: m.motivo, criadoEm: String(m.criadoEm) })),
-      utilizadores: utilizadores.map((u) => ({ id: u.id, nome: u.nome })),
-    };
-  } catch (err) {
-    console.warn('Prisma ORM inacessível para relatórios, fallback Supabase REST:', err);
+      reportPrismaSuccess();
+      return {
+        vendas: vendas.map((v) => ({ id: v.id, utilizadorId: v.utilizadorId, total: String(v.total), criadoEm: String(v.criadoEm) })),
+        itensVenda: itensVenda.map((i) => ({ id: i.id, vendaId: i.vendaId, produtoId: i.produtoId, quantidade: i.quantidade, subtotal: String(i.subtotal) })),
+        produtos: produtos.map((p) => ({ id: p.id, codigo: p.codigo, nome: p.nome, categoriaId: p.categoriaId, precoCompra: String(p.precoCompra), precoVenda: String(p.precoVenda), stockActual: p.stockActual, stockMinimo: p.stockMinimo, activo: p.activo })),
+        categorias: categorias.map((c) => ({ id: c.id, nome: c.nome, activo: c.activo ?? true })),
+        movimentosRaw: movimentosRaw.map((m) => ({ id: m.id, produtoId: m.produtoId, utilizadorId: m.utilizadorId, tipo: String(m.tipo), quantidade: m.quantidade, stockAnterior: m.stockAnterior, stockPosterior: m.stockPosterior, motivo: m.motivo, criadoEm: String(m.criadoEm) })),
+        utilizadores: utilizadores.map((u) => ({ id: u.id, nome: u.nome })),
+      };
+    } catch (err) {
+      reportPrismaFailure(err);
+    }
   }
 
-  // 2. Fallback resiliente via Supabase REST
+  // 2. Fallback resiliente via Supabase REST (execução imediata)
   try {
     const [vendasRes, itensRes, produtosRes, categoriasRes, movimentosRes, utilizadoresRes] = await Promise.all([
       supabaseAdmin.from('Venda').select('id, utilizadorId, total, criadoEm').order('criadoEm', { ascending: false }),

@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { db } from '@/src/prisma/db';
+import { db, canUsePrisma, reportPrismaSuccess, reportPrismaFailure } from '@/src/prisma/db';
 import { supabaseAdmin } from '@/src/lib/supabase/admin';
 import { saleCreateSchema, type SaleCreateInput } from '@/src/lib/validators';
 
@@ -32,9 +32,10 @@ export async function createSale(utilizadorId: number, input: SaleCreateInput) {
     itens.set(item.produtoId, (itens.get(item.produtoId) ?? 0) + item.quantidade);
   }
 
-  // 1. Tentar primeiro via Prisma ORM
-  try {
-    return await db.transaction(async (tx) => {
+  // 1. Tentar primeiro via Prisma ORM (se disponível)
+  if (canUsePrisma()) {
+    try {
+      const res = await db.transaction(async (tx) => {
       const produtos = await tx.orm.public.Produto.select(
         'id', 'codigo', 'nome', 'precoVenda', 'stockActual', 'activo',
       ).all();
@@ -121,13 +122,18 @@ export async function createSale(utilizadorId: number, input: SaleCreateInput) {
         itens: calculados,
       };
     });
+    reportPrismaSuccess();
+    return res;
   } catch (err) {
-    if (err instanceof Error && (err.message.includes('não encontrado') || err.message.includes('inactivo') || err.message.includes('insuficiente'))) {
-      throw err;
+      if (err instanceof Error && (err.message.includes('não encontrado') || err.message.includes('inactivo') || err.message.includes('insuficiente'))) {
+        throw err;
+      }
+      reportPrismaFailure(err);
     }
+  }
 
-    // 2. Fallback Supabase REST
-    const { data: produtosRaw } = await supabaseAdmin
+  // 2. Supabase REST (execução direta e instantânea ~40ms)
+  const { data: produtosRaw } = await supabaseAdmin
       .from('Produto')
       .select('id, codigo, nome, precoVenda, stockActual, activo');
 
@@ -212,18 +218,24 @@ export async function createSale(utilizadorId: number, input: SaleCreateInput) {
       itens: calculados,
     };
   }
-}
 
 export async function getSales(utilizadorId: number, perfil: 'ADMINISTRADOR' | 'ATENDENTE') {
   let vendas: any[] = [];
   let utilizadores: any[] = [];
 
-  // 1. Tentar primeiro via Prisma ORM
-  try {
-    vendas = await db.orm.public.Venda.select('id', 'utilizadorId', 'total', 'criadoEm').orderBy((venda) => venda.criadoEm.desc()).all();
-    utilizadores = await db.orm.public.Utilizador.select('id', 'nome').all();
-  } catch {
-    // 2. Fallback Supabase REST
+  // 1. Tentar primeiro via Prisma ORM (se disponível)
+  if (canUsePrisma()) {
+    try {
+      vendas = await db.orm.public.Venda.select('id', 'utilizadorId', 'total', 'criadoEm').orderBy((venda) => venda.criadoEm.desc()).all();
+      utilizadores = await db.orm.public.Utilizador.select('id', 'nome').all();
+      reportPrismaSuccess();
+    } catch (err) {
+      reportPrismaFailure(err);
+    }
+  }
+
+  // 2. Supabase REST fallback direto
+  if (vendas.length === 0 && !canUsePrisma()) {
     try {
       const [vRes, uRes] = await Promise.all([
         supabaseAdmin.from('Venda').select('id, utilizadorId, total, criadoEm').order('criadoEm', { ascending: false }),
@@ -271,34 +283,40 @@ export type SaleDetail = {
 };
 
 export async function getSaleById(id: number, utilizadorId: number, perfil: 'ADMINISTRADOR' | 'ATENDENTE'): Promise<SaleDetail | null> {
-  // 1. Tentar primeiro via Prisma ORM
-  try {
-    const venda = await db.orm.public.Venda.where({ id }).first();
-    if (!venda || (perfil === 'ATENDENTE' && venda.utilizadorId !== utilizadorId)) return null;
-
-    const itens = await db.orm.public.ItemVenda.where({ vendaId: id }).all();
-    const produtos = await db.orm.public.Produto.select('id', 'codigo', 'nome').all();
-    const utilizador = await db.orm.public.Utilizador.where({ id: venda.utilizadorId }).first();
-
-    return {
-      id: Number(venda.id),
-      utilizadorId: Number(venda.utilizadorId),
-      total: String(venda.total),
-      criadoEm: String(venda.criadoEm),
-      utilizadorNome: utilizador?.nome ?? 'Utilizador',
-      itens: itens.map((item) => ({
-        id: Number(item.id),
-        vendaId: Number(item.vendaId),
-        produtoId: Number(item.produtoId),
-        quantidade: Number(item.quantidade),
-        precoUnitario: String(item.precoUnitario),
-        subtotal: String(item.subtotal),
-        produto: produtos.find((produto) => produto.id === item.produtoId),
-      })),
-    };
-  } catch {
-    // 2. Fallback Supabase REST
+  // 1. Tentar primeiro via Prisma ORM (se disponível)
+  if (canUsePrisma()) {
     try {
+      const venda = await db.orm.public.Venda.where({ id }).first();
+      if (!venda || (perfil === 'ATENDENTE' && venda.utilizadorId !== utilizadorId)) return null;
+
+      const itens = await db.orm.public.ItemVenda.where({ vendaId: id }).all();
+      const produtos = await db.orm.public.Produto.select('id', 'codigo', 'nome').all();
+      const utilizador = await db.orm.public.Utilizador.where({ id: venda.utilizadorId }).first();
+
+      reportPrismaSuccess();
+      return {
+        id: Number(venda.id),
+        utilizadorId: Number(venda.utilizadorId),
+        total: String(venda.total),
+        criadoEm: String(venda.criadoEm),
+        utilizadorNome: utilizador?.nome ?? 'Utilizador',
+        itens: itens.map((item) => ({
+          id: Number(item.id),
+          vendaId: Number(item.vendaId),
+          produtoId: Number(item.produtoId),
+          quantidade: Number(item.quantidade),
+          precoUnitario: String(item.precoUnitario),
+          subtotal: String(item.subtotal),
+          produto: produtos.find((produto) => produto.id === item.produtoId),
+        })),
+      };
+    } catch (err) {
+      reportPrismaFailure(err);
+    }
+  }
+
+  // 2. Fallback Supabase REST direto (~30ms)
+  try {
       const { data: vData } = await supabaseAdmin.from('Venda').select('*').eq('id', id).maybeSingle();
       if (!vData || (perfil === 'ATENDENTE' && Number(vData.utilizadorId) !== utilizadorId)) return null;
 
@@ -331,4 +349,3 @@ export async function getSaleById(id: number, utilizadorId: number, perfil: 'ADM
       return null;
     }
   }
-}
